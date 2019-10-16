@@ -19,6 +19,7 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 # Sending our replies here.
 SLACK_URL = "https://slack.com/api/chat.postMessage"
 
+
 def testdynamo():
     try:
         dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
@@ -89,16 +90,16 @@ def lambda_handler(data, context):
         data = data.encode("ascii")
 
         # Creating HTTP POST request.
-        request = urllib.request.Request(SLACK_URL, data=data, method="POST")
+        requestHTTP = urllib.request.Request(SLACK_URL, data=data, method="POST")
 
         # Adding header.
-        request.add_header(
+        requestHTTP.add_header(
             "Content-Type",
             "application/x-www-form-urlencoded"
         )
 
         # Request away!
-        urllib.request.urlopen(request).read()
+        urllib.request.urlopen(requestHTTP).read()
 
     return "200 OK"
 
@@ -112,7 +113,9 @@ def processMessage(slack_event):
     if action == "greeting":
         return GreetUser.greet(slack_event['user'])
     elif action == "database":
-        return DatabaseHandler.getOperation(resp)
+        return DatabaseHandler.dbhandler(resp)
+    else:
+        return "I'm sorry, I don't quite understand. To see my documentation, type help"
 
     return action
 

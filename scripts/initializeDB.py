@@ -3,7 +3,8 @@ import sys
 
 seedFile = input("Please input the name of the seed file:")
 dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-table = dynamodb.Table('BTPAlphaZeta')
+tablename = input("Which table will we be writing to: ")
+table = dynamodb.Table(tablename)
 
 with table.batch_writer() as batch:
     try:
@@ -18,15 +19,17 @@ with table.batch_writer() as batch:
         while currentLine != '':
             processed = currentLine.split(",")
             name = processed[0]
-            
-            number = processed[1]
-            number = number[0:number.index('\n')]
+            phonenumber = processed[1]
+
+            # Removing the newline character.
+            rollnumber = processed[2]
+            rollnumber = rollnumber[0:rollnumber.index('\n')]
 
             batch.put_item(
                 Item={
-                    'id': count,
                     'name': name,
-                    'number': number
+                    'phonenumber': phonenumber,
+                    'rollnumber': rollnumber
                 }
             )
             print("Writing " + name + " to db...")

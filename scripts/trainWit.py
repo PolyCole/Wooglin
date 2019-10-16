@@ -1,7 +1,7 @@
 import sys
 from wit import Wit
 
-witClient = Wit('4NLCSWT6WGCYWOQ4VCZDKJ6F2CMJIQ6Q')
+witClient = Wit(input("Please enter API key"))
 
 try:
     filename = input("Please input the name of the file:")
