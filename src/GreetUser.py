@@ -3,7 +3,6 @@ import json
 import os
 import random
 
-
 def greet(userid):
     name = getuserinfo(userid)
     greetings = ["Hi", "Hello", "Hey", "What\'s up",

@@ -4,26 +4,31 @@ from boto3.dynamodb.conditions import Key, Attr
 
 def dbhandler(resp):
     operation = resp['entities']['db_operation'][0]['value']
-    table = resp['entities']['table'][0]['value']
     key = resp['entities']['key'][0]['value']
 
-    if operation == 'operation':
-        return "I'm sorry. I don't understand that db operation"
-    elif table == 'table':
-        return "Sorry, I don't see that table here..."
-    elif key == '':
-        return "Oop! Sorry but that person doesn't seem to exist."
+    try:
+        attribute = resp['entities']['attribute'][0]['value']
+    except KeyError as e:
+        attribute = ""
+
+    try:
+        table = resp['entities']['table'][0]['value']
+    except KeyError as e:
+        table = "members"
 
     print("key: " + key)
     print("table: " + table)
+    print("attribute: " + attribute)
 
     if operation == "get":
         data = getOperation(table,key)
-        return stringify_member(data, table, key)
+        return stringify_member(data, table, key, attribute)
     elif operation == "modify":
         return modifyOperation(resp,table,key)
     elif operation == "delete":
         return deleteOperation(table, key)
+    elif operation == "create":
+        return createOperation(table, key)
     else:
         return "I'm sorry, that database functionality is either not understood or not supported"
 
@@ -31,7 +36,6 @@ def dbhandler(resp):
 # Handles get operations to the DB.
 def getOperation(table, key):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    # Figuring out what we're getting.
 
     table = dynamodb.Table(table)
 
@@ -40,8 +44,11 @@ def getOperation(table, key):
         KeyConditionExpression=Key('name').eq(key)
     )
 
-    # Returning the data we got.
+    #print("Response from GET request:")
+    #print(response)
     return response['Items']
+
+
 
 def modifyOperation(resp, table, key):
     target = getOperation(table, key)
@@ -74,7 +81,9 @@ def deleteOperation(table, key):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table(table)
 
-    table.delete_item(
+    print("Delete is attempting to DELETE: " + key)
+
+    response = table.delete_item(
         Key={
             'name':key
         }
@@ -83,18 +92,37 @@ def deleteOperation(table, key):
     return("Well, I've done it. If " + str(key) + " existed before they certainly don't now")
 
 
+def createOperation(tablename, key):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    table = dynamodb.Table(tablename)
+
+    table.put_item(
+        Item={
+            'name': key,
+            'phonenumber': 0000000000,
+            'rollnumber': 0000
+        }
+    )
+    toReturn = "Well, I've added " + str(key) + " to " + tablename
+    toReturn += ". However, their data is all null! You should probably fix that..."
+
+    return toReturn
+
+
 # Puts the data into a more readable form.
-def stringify_member(data, table, key):
+def stringify_member(data, table, key, attribute):
     if(len(data) != 0):
-        toReturn = "Here is the data for " + data[0]['name'] + ":" + "\n"
-        toReturn += "Phone number: " + data[0]['phonenumber'] + "\n"
-        toReturn += "Roll number: " + str(data[0]['rollnumber'])
+        if(attribute == ""):
+            toReturn = "Here is the data for " + data[0]['name'] + ":" + "\n"
+            toReturn += "Phone number: " + str(data[0]['phonenumber']) + "\n"
+            toReturn += "Roll number: " + str(data[0]['rollnumber'])
+        else:
+            return key + "'s " + attribute + " is: " + str(data[0][attribute])
     else:
         toReturn = "I'm sorry, I could not find " + str(key) + "\n"
         toReturn += " in " + str(table) + ". Please make sure it is spelled correctly."
     return toReturn
 
-# TODO Implement me
 def stringify_update(data, key, attribute, new_value):
     data = data['ResponseMetadata']
     responseCode = data['HTTPStatusCode']
