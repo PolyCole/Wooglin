@@ -1,47 +1,17 @@
-import json
 import os
 import logging
 import urllib
-import base64
-import random
 
 from wit import Wit
-from src import TwilioHandler, GreetUser, testingWit, DatabaseHandler
-
-import boto3
+from src import GreetUser, testingWit, DatabaseHandler, SMSHandler
 
 from urllib import request, parse
-from boto3.dynamodb.conditions import Key, Attr
 
 # Bot authorization token from slack.
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 
 # Sending our replies here.
 SLACK_URL = "https://slack.com/api/chat.postMessage"
-
-
-def testdynamo():
-    try:
-        dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-        table = dynamodb.Table('BTPAlphaZeta')
-        print(table.item_count)
-
-        response = table.query(
-            KeyConditionExpression=Key('id').eq(1)
-        )
-        items = response['Items'][0]
-        return items['name']
-
-        # object = table.get_item(Key={
-        #     'id': 0
-        # })
-        #
-        # entry = object['Item']
-        #
-        #
-        # return entry['name']
-    except Exception as e:
-        return e
 
 
 def lambda_handler(data, context):
@@ -63,8 +33,6 @@ def lambda_handler(data, context):
         try:
             if text == os.environ['SECRET_PROMPT']:
                 returnMessage = os.environ['SECRET_RESPONSE']
-            elif text == "testdynamo":
-                returnMessage = testdynamo()
             elif text == "help":
                 returnMessage = "Here's a link to my documentation: https://github.com/PolyCole/Wooglin/README.md"
             elif text == "test":
@@ -114,6 +82,8 @@ def processMessage(slack_event):
         return GreetUser.greet(slack_event['user'])
     elif action == "database":
         return DatabaseHandler.dbhandler(resp)
+    elif action == "sms":
+        return SMSHandler.smshandler(resp)
     else:
         return "I'm sorry, I don't quite understand. To see my documentation, type help"
 

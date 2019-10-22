@@ -49,6 +49,11 @@ def getOperation(table, key):
     return response['Items']
 
 
+def scanTable(tablename):
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    table = dynamodb.Table(tablename)
+    return table.scan()['Items']
+
 
 def modifyOperation(resp, table, key):
     target = getOperation(table, key)
@@ -81,6 +86,7 @@ def deleteOperation(table, key):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table(table)
 
+
     print("Delete is attempting to DELETE: " + key)
 
     response = table.delete_item(
@@ -99,8 +105,8 @@ def createOperation(tablename, key):
     table.put_item(
         Item={
             'name': key,
-            'phonenumber': 0000000000,
-            'rollnumber': 0000
+            'phonenumber': 0,
+            'rollnumber': 0
         }
     )
     toReturn = "Well, I've added " + str(key) + " to " + tablename
