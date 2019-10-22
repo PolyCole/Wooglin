@@ -76,7 +76,16 @@ def processMessage(slack_event):
     witClient = Wit(os.environ['WIT_TOKEN'])
 
     resp = witClient.message(slack_event['text'].lower())
-    action = resp['entities']['intent'][0]['value']
+
+    try:
+        action = resp['entities']['intent'][0]['value']
+        confidence = resp['entities']['intent'][0]['confidence']
+    except KeyError:
+        action = "confused"
+        confidence = 0
+
+    if action == "confused" or confidence < 0.70:
+        return "I'm sorry, I don't quite understand. To see my documentation, type help"
 
     if action == "greeting":
         return GreetUser.greet(slack_event['user'])
@@ -85,7 +94,8 @@ def processMessage(slack_event):
     elif action == "sms":
         return SMSHandler.smshandler(resp)
     else:
-        return "I'm sorry, I don't quite understand. To see my documentation, type help"
+        return "Whoops! It looks like that feature hasn't been hooked up yet."
+
 
     return action
 
