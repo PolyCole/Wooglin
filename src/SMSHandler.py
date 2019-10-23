@@ -1,7 +1,7 @@
 import os
 import base64
 from urllib import request, parse
-from src import DatabaseHandler
+from src import DatabaseHandler, wooglin
 
 def smshandler(resp):
     key = resp['entities']['key'][0]['value']
@@ -13,9 +13,9 @@ def smshandler(resp):
             number = person['phonenumber']
             response = sendsms(number, message)
         if response:
-            return "Alrighty! I have notified the chapter: " + message
+            wooglin.sendmessage("Alrighty! I have notified the chapter: " + message)
         else:
-            return "I was unable to send that message to the chapter."
+            wooglin.sendmessage("I was unable to send that message to the chapter.")
     elif key == "exec":
         data = DatabaseHandler.scanTable('members')
         for x in range(10):
@@ -26,21 +26,21 @@ def smshandler(resp):
             # Irrelevant if Twilio does this for us inherently.
             response = sendsms(number, message)
         if response:
-            return "I successfully notified the executive board: " + message
+            wooglin.sendmessage("I successfully notified the executive board: " + message)
         else:
-            return "I'm sorry, I was unable to tell exec that."
+            wooglin.sendmessage("I'm sorry, I was unable to tell exec that.")
     elif key == "soberbros":
         temp = 1
         print(temp)
         # TODO Implement logic for determining and notifying sober bros that evening.
 
-        return "I have texted the sober bros: " + message
+        wooglin.sendmessage("I have texted the sober bros: " + message)
     else:
         response = sendsms(key, message)
         if response:
-            return "Success! I sent " + key + " the message: " + message
+            wooglin.sendmessage("Success! I sent " + key + " the message: " + message)
         else:
-            return "Something has gone wrong. I was unable to send that message."
+            wooglin.sendmessage("Something has gone wrong. I was unable to send that message.")
 
 
 def sendsms(number, message):

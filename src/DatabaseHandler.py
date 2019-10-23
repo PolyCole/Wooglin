@@ -1,10 +1,11 @@
 import boto3
 import sys
 from boto3.dynamodb.conditions import Key, Attr
+from src import wooglin
 
 def dbhandler(resp):
     operation = resp['entities']['db_operation'][0]['value']
-    key = resp['entities']['key'][0]['value']
+    key = resp['entities']['key']
 
     try:
         attribute = resp['entities']['attribute'][0]['value']
@@ -16,37 +17,38 @@ def dbhandler(resp):
     except KeyError as e:
         table = "members"
 
-    print("key: " + key)
-    print("table: " + table)
-    print("attribute: " + attribute)
+    print("key: " + str(key))
+    print("table: " + str(table))
+    print("attribute: " + str(attribute))
 
     if operation == "get":
-        data = getOperation(table,key)
-        return stringify_member(data, table, key, attribute)
+        getOperation(table,key, attribute)
     elif operation == "modify":
-        return modifyOperation(resp,table,key)
+        modifyOperation(resp,table,key)
     elif operation == "delete":
-        return deleteOperation(table, key)
+        deleteOperation(table, key)
     elif operation == "create":
-        return createOperation(table, key)
+        createOperation(table, key)
     else:
-        return "I'm sorry, that database functionality is either not understood or not supported"
+        wooglin.sendmessage("I'm sorry, that database functionality is either not understood or not supported")
 
 
 # Handles get operations to the DB.
-def getOperation(table, key):
+def getOperation(table, key, attribute):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
 
+    tablename = table
     table = dynamodb.Table(table)
 
-    # Getting the item!
-    response = table.query(
-        KeyConditionExpression=Key('name').eq(key)
-    )
+    for x in range(len(key)):
+        # Getting the item!
+        response = table.query(
+            KeyConditionExpression=Key('name').eq(key[x]['value'])
+        )
 
-    #print("Response from GET request:")
-    #print(response)
-    return response['Items']
+        #print("Response from GET request:")
+        #print(response)
+        wooglin.sendmessage(stringify_member(response['Items'], tablename, key, attribute))
 
 
 def scanTable(tablename):
@@ -56,23 +58,29 @@ def scanTable(tablename):
 
 
 def modifyOperation(resp, table, key):
-    target = getOperation(table, key)
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
 
+    tablename = table
+    table = dynamodb.Table(table)
+
+    target = table.query(
+        KeyConditionExpression=Key('name').eq(key[0]['value'])
+    )
+
+    # Our target doesn't exist in the table.
     if(len(target) == 0):
-        return stringify_member(target, table, key)
+        wooglin.sendmessage(stringify_member(target, tablename, key, ""))
+        return
 
     attribute = resp['entities']['attribute'][0]['value']
     new_value = resp['entities']['new_value'][0]['value']
 
-    print("attribute: " + attribute)
-    print("new_value: " + new_value)
-
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(table)
+    print("attribute: " + str(attribute))
+    print("new_value: " + str(new_value))
 
     response = table.update_item(
         Key={
-            'name': key
+            'name': key[0]['value']
         },
         UpdateExpression='SET ' + str(attribute) + ' = :val1',
         ExpressionAttributeValues={
@@ -80,40 +88,46 @@ def modifyOperation(resp, table, key):
         }
     )
 
-    return stringify_update(response, key, attribute, new_value)
+    wooglin.sendmessage(stringify_update(response, key[0]['value'], attribute, new_value))
 
 def deleteOperation(table, key):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table(table)
 
+    peopleIveDeleted = ""
 
-    print("Delete is attempting to DELETE: " + key)
+    for x in range(len(key)):
+        print("Delete is attempting to DELETE: " + str(key[x]['value']))
 
-    response = table.delete_item(
-        Key={
-            'name':key
-        }
-    )
+        response = table.delete_item(
+            Key={
+                'name':key[x]['value']
+            }
+        )
 
-    return("Well, I've done it. If " + str(key) + " existed before they certainly don't now")
-
+        peopleIveDeleted += str(key[x]['value']) + ", "
+    wooglin.sendmessage("Well I've done it. If " + str(peopleIveDeleted[:len(peopleIveDeleted)-2]) + " existed before, they don't now")
 
 def createOperation(tablename, key):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
     table = dynamodb.Table(tablename)
 
-    table.put_item(
-        Item={
-            'name': key,
-            'phonenumber': 0,
-            'rollnumber': 0
-        }
-    )
-    toReturn = "Well, I've added " + str(key) + " to " + tablename
+    peopleIveCreated = ""
+
+    for x in range(len(key)):
+
+        table.put_item(
+            Item={
+                'name': key[x]['value'],
+                'phonenumber': 0,
+                'rollnumber': 0
+            }
+        )
+        peopleIveCreated += str(key[x]['value']) + ", "
+
+    toReturn = "Well, I've added " + str(peopleIveCreated[:len(peopleIveCreated) -1]) + " to " + tablename
     toReturn += ". However, their data is all null! You should probably fix that..."
-
-    return toReturn
-
+    wooglin.sendmessage(toReturn)
 
 # Puts the data into a more readable form.
 def stringify_member(data, table, key, attribute):
@@ -125,7 +139,7 @@ def stringify_member(data, table, key, attribute):
         else:
             return key + "'s " + attribute + " is: " + str(data[0][attribute])
     else:
-        toReturn = "I'm sorry, I could not find " + str(key) + "\n"
+        toReturn = "I'm sorry, I could not find " + str(key[0]['value']) + "\n"
         toReturn += " in " + str(table) + ". Please make sure it is spelled correctly."
     return toReturn
 

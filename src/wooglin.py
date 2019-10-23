@@ -14,7 +14,11 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 SLACK_URL = "https://slack.com/api/chat.postMessage"
 
 
+
+
 def lambda_handler(data, context):
+    global SLACK_CHANNEL
+
     # Handles initial challenge with Slack's verification.
     if "challenge" in data:
         return data["challenge"]
@@ -30,45 +34,49 @@ def lambda_handler(data, context):
         text = slack_event["text"].lower()
         text = text[13::] if text.find('@') != -1 else text
 
+        # Getting ID of channel where message originated.
+        SLACK_CHANNEL = slack_event["channel"]
+
         try:
             if text == os.environ['SECRET_PROMPT']:
-                returnMessage = os.environ['SECRET_RESPONSE']
+                sendmessage(os.environ['SECRET_RESPONSE'])
             elif text == "help":
-                returnMessage = "Here's a link to my documentation: https://github.com/PolyCole/Wooglin/README.md"
-            elif text == "test":
-                returnMessage = testingWit.test()
+                sendmessage("Here's a link to my documentation: https://github.com/PolyCole/Wooglin/README.md")
             else:
-                returnMessage = processMessage(slack_event)
+                processMessage(slack_event)
         except Exception as e:
-            returnMessage = e
+            sendmessage("I've encountered an error: " + str(e))
 
-        # Getting ID of channel where message originated.
-        channel_id = slack_event["channel"]
+        return "200 OK"
 
-        # Crafting our response.
-        data = urllib.parse.urlencode(
-            (
-                ("token", BOT_TOKEN),
-                ("channel", channel_id),
-                ("text", returnMessage)
-            )
+
+def sendmessage(message):
+    # Crafting our response.
+    data = urllib.parse.urlencode(
+        (
+            ("token", BOT_TOKEN),
+            ("channel", SLACK_CHANNEL),
+            ("text", message)
         )
+    )
 
-        # Encoding
-        data = data.encode("ascii")
+    print("Sending: " + str(data))
 
-        # Creating HTTP POST request.
-        requestHTTP = urllib.request.Request(SLACK_URL, data=data, method="POST")
+    # Encoding
+    data = data.encode("ascii")
 
-        # Adding header.
-        requestHTTP.add_header(
-            "Content-Type",
-            "application/x-www-form-urlencoded"
-        )
+    # Creating HTTP POST request.
+    requestHTTP = urllib.request.Request(SLACK_URL, data=data, method="POST")
 
-        # Request away!
-        urllib.request.urlopen(requestHTTP).read()
+    # Adding header.
+    requestHTTP.add_header(
+        "Content-Type",
+        "application/x-www-form-urlencoded"
+    )
 
+    # Request away!
+    urllib.request.urlopen(requestHTTP).read()
+    print("Sent message!")
     return "200 OK"
 
 
@@ -85,18 +93,14 @@ def processMessage(slack_event):
         confidence = 0
 
     if action == "confused" or confidence < 0.70:
-        return "I'm sorry, I don't quite understand. To see my documentation, type help"
-
-    if action == "greeting":
-        return GreetUser.greet(slack_event['user'])
+        sendmessage("I'm sorry, I don't quite understand. To see my documentation, type help")
+    elif action == "greeting":
+        sendmessage(GreetUser.greet(slack_event['user']))
     elif action == "database":
-        return DatabaseHandler.dbhandler(resp)
+        DatabaseHandler.dbhandler(resp)
     elif action == "sms":
-        return SMSHandler.smshandler(resp)
+        SMSHandler.smshandler(resp)
     else:
-        return "Whoops! It looks like that feature hasn't been hooked up yet."
-
-
-    return action
+        sendmessage("Whoops! It looks like that feature hasn't been hooked up yet.")
 
 
