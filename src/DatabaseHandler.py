@@ -1,11 +1,14 @@
-import boto3
-import sys
+import boto3, sys, datetime
 from boto3.dynamodb.conditions import Key, Attr
 from src import wooglin
 
 def dbhandler(resp):
     operation = resp['entities']['db_operation'][0]['value']
-    key = resp['entities']['key']
+
+    try:
+        key = resp['entities']['key']
+    except KeyError as e:
+        key = ""
 
     try:
         attribute = resp['entities']['attribute'][0]['value']
@@ -22,7 +25,15 @@ def dbhandler(resp):
     print("attribute: " + str(attribute))
 
     if operation == "get":
-        getOperation(table,key, attribute)
+        if table == "soberbros":
+            try:
+                date = resp['entities']['datetime'][0]['value']
+            except KeyError as e:
+                date = resp['entities']['datetime'][0]['from']['value']
+            print("Passing with get sober bros request: " + str(date[0:10]))
+            getOperationSoberBros(table, date[0:10])
+        else:
+            getOperation(table,key, attribute)
     elif operation == "modify":
         modifyOperation(resp,table,key)
     elif operation == "delete":
@@ -49,6 +60,16 @@ def getOperation(table, key, attribute):
         #print("Response from GET request:")
         #print(response)
         wooglin.sendmessage(stringify_member(response['Items'], tablename, key, attribute))
+
+def getOperationSoberBros(table, date):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    table = dynamodb.Table(table)
+
+    response = table.query(
+        KeyConditionExpression=Key('date').eq(date)
+    )
+
+    wooglin.sendmessage(stringify_soberbros(response['Items']))
 
 
 def scanTable(tablename):
@@ -151,3 +172,27 @@ def stringify_update(data, key, attribute, new_value):
         return "Success! " + key + "'s " + attribute + " is now: " + new_value
     else:
         return "I'm sorry. Something went wrong."
+
+
+def stringify_soberbros(response):
+    if(len(response) == 0):
+        return "I'm sorry. It doesn't look like that date has any sober bros shifts yet."
+
+    dateStatement = "The Sober Bros for " + unprocessDate(response[0]['date']) + " are: "
+    soberBroList = response[0]['soberbro1'].strip() + ", "
+    soberBroList += response[0]['soberbro2'].strip() + ", "
+    soberBroList += response[0]['soberbro3'].strip() + ", and "
+    soberBroList += response[0]['soberbro4'].strip() + "."
+
+    toReturn = dateStatement + soberBroList
+
+    return toReturn
+
+
+def unprocessDate(date):
+    print("Unprocess date got:" + str(date))
+    date = date.split('-')
+    dt = datetime.datetime(int(date[0]), int(date[1]), int(date[2]))
+    date_string = '{:%A, %B %d %Y}'.format(dt)
+    print("Unprocess date returned:" + date_string)
+    return str(date_string)

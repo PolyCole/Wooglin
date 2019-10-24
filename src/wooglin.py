@@ -42,6 +42,8 @@ def lambda_handler(data, context):
                 sendmessage(os.environ['SECRET_RESPONSE'])
             elif text == "help":
                 sendmessage("Here's a link to my documentation: https://github.com/PolyCole/Wooglin/README.md")
+            elif text == "":
+                return "200 OK"
             else:
                 processMessage(slack_event)
         except Exception as e:
