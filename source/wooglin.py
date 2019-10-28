@@ -3,7 +3,7 @@ import logging
 import urllib
 
 from wit import Wit
-from src import GreetUser, testingWit, DatabaseHandler, SMSHandler
+from source import GreetUser, DatabaseHandler, SMSHandler
 
 from urllib import request, parse
 

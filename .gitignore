@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# Wooglin Stuff
+.idea/
+resources/
+testingWit.py
+testingWooglin.py
+
+
 # Distribution / packaging
 .Python
 build/

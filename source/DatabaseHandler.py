@@ -1,6 +1,6 @@
 import boto3, sys, datetime
 from boto3.dynamodb.conditions import Key, Attr
-from src import wooglin
+from source import wooglin
 
 def dbhandler(resp):
     operation = resp['entities']['db_operation'][0]['value']
