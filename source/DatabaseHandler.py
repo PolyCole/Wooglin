@@ -153,10 +153,18 @@ def createOperation(tablename, key):
 # Puts the data into a more readable form.
 def stringify_member(data, table, key, attribute):
     if(len(data) != 0):
-        if(attribute == ""):
+        if attribute == "":
             toReturn = "Here is the data for " + data[0]['name'] + ":" + "\n"
             toReturn += "Phone number: " + str(data[0]['phonenumber']) + "\n"
-            toReturn += "Roll number: " + str(data[0]['rollnumber'])
+            toReturn += "Roll number: " + str(data[0]['rollnumber']) + "\n"
+            toReturn += "Excused Absences: " + str(data[0]['excused']) + "\n"
+            toReturn += "Excuses: " + str(data[0]['excuses']) + "\n"
+            toReturn += "Unexcused Absences: " + str(data[0]['unexcused']) + "\n"
+            toReturn += "Times Present at Chapter: " + str(data[0]['present']) + "\n"
+        elif attribute == "excuses":
+            toReturn = key +"'s" + "excuses for missing chapter have been: "
+            for i in range(len(data[0]['excuses'])):
+                toReturn += str(data[0]['excuses'][i]) + ", "
         else:
             return key + "'s " + attribute + " is: " + str(data[0][attribute])
     else:

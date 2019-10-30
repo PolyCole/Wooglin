@@ -1,5 +1,6 @@
-import sys
+import sys, os
 from wit import Wit
+import time
 
 witClient = Wit(input("Please enter API key"))
 
@@ -10,15 +11,17 @@ try:
     currentLine = inputFile.readline()
     count = 0
     while(currentLine != ""):
-        cur = currentLine.split(",")[1]
-        chop =  cur.index('\n')
-        cur = cur[0:chop]
+        cur = currentLine.strip()
         print("Sending: " + cur + " to Wit...")
         witClient.message(cur)
         currentLine = inputFile.readline()
         count = count + 1
+        time.sleep(3)
 
     print("Successfully sent " + str(count) + " training messages to Wit.")
+    print("Deleting file...")
+    os.remove(filename)
+    file = open(filename, 'r')
     inputFile.close()
     
 except Exception as e:

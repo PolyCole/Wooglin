@@ -1,6 +1,7 @@
 import boto3
 import sys
 import datetime
+import os
 
 seedFile = input("Please input the name of the seed file:")
 dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
@@ -43,7 +44,7 @@ def initializeSoberBros(table, seedFile):
 
 			print("Successfully wrote " + str(count) + " entries to soberbros")
 		except Exception as e:
-			print("Oops. Exception of type " + str(sys.exc_info()[0]) + " occurred")
+			print("Oops. Exception of type " + sys.exc_info()[0] + " occurred")
 	
 	
 	
@@ -68,6 +69,9 @@ def initializeMembers(table, seedFile):
 		try:
 			seedFile = open(seedFile, "r")
 			
+			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\ListFile.txt")
+			chapterList = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\ListFile.txt", "w")
+			
 			#Getting rid of placeholder line
 			seedFile.readline()
 			
@@ -77,17 +81,21 @@ def initializeMembers(table, seedFile):
 			while currentLine != '':
 				processed = currentLine.split(",")
 				name = processed[0]
-				phonenumber = processed[1]
-
-				# Removing the newline character.
-				rollnumber = processed[2]
-				rollnumber = rollnumber[0:rollnumber.index('\n')]
+				rollnumber = processed[1]
+				phonenumber = processed[2]
+				
+				chapterList.write(name + "\n")
 
 				batch.put_item(
 					Item={
 						'name': name,
 						'phonenumber': phonenumber,
-						'rollnumber': rollnumber
+						'rollnumber': rollnumber,
+						'present':0,
+						'unexcused':0,
+						'excused':0,
+						'excuses':[],
+						'absences': 0
 					}
 				)
 				
@@ -96,8 +104,10 @@ def initializeMembers(table, seedFile):
 				count = count + 1
 
 			print("Successfully wrote " + str(count) + " entries to members")
+			chapterList.close()
 		except Exception as e:
-			print("Oops. Exception of type " + sys.exc_info()[0] + " occurred")
+			print("Oops. Exception of type " + str(sys.exc_info()[0]) + " occurred")
+			print(str(e.__traceback__()))
 
 
 

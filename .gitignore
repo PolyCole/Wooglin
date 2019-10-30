@@ -11,7 +11,10 @@ __pycache__/
 resources/
 testingWit.py
 testingWooglin.py
-
+scripts/attendanceTracking/excuses.txt
+scripts/attendanceTracking/ListFile.txt
+scripts/attendanceTracking/Attendances/
+scripts/witData.txt
 
 # Distribution / packaging
 .Python
