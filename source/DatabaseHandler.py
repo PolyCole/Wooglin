@@ -51,15 +51,35 @@ def getOperation(table, key, attribute):
     tablename = table
     table = dynamodb.Table(table)
 
-    for x in range(len(key)):
+    if isinstance(key, list):
+        print("In list option")
+        for x in range(len(key)):
+            # Getting the item!
+            response = table.query(
+                KeyConditionExpression=Key('name').eq(key[x]['value'])
+            )
+
+            #print("Response from GET request:")
+            #print(response)
+            print("Get operation returned: " + str(response))
+            wooglin.sendmessage(stringify_member(response['Items'], tablename, key, attribute))
+    elif isinstance(key, dict):
+        print("In dict option")
         # Getting the item!
+
+        print("Starting get request with key : " +key[0]['value'])
+
         response = table.query(
-            KeyConditionExpression=Key('name').eq(key[x]['value'])
+            KeyConditionExpression=Key('name').eq(key[0]['value'])
         )
 
-        #print("Response from GET request:")
-        #print(response)
+        print("Got a response from query request")
+        # print("Response from GET request:")
+        # print(response)
+        print("Get operation returned: " + str(response))
         wooglin.sendmessage(stringify_member(response['Items'], tablename, key, attribute))
+    else:
+        print("I'm not entirely sure how key was put into " + str(type(key)) + " but it was an I'm confused.")
 
 def getOperationSoberBros(table, date):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
@@ -152,21 +172,30 @@ def createOperation(tablename, key):
 
 # Puts the data into a more readable form.
 def stringify_member(data, table, key, attribute):
+    print("Welcome to stringify_member")
+    print("S_M received: ")
+    print("Data: " + str(data))
+    print("Table: " + str(table))
+    print("Key: " + str(key))
+    print("Attribute: " + str(attribute))
     if(len(data) != 0):
         if attribute == "":
-            toReturn = "Here is the data for " + data[0]['name'] + ":" + "\n"
+            toReturn = "Here is the data for " + str(data[0]['name']) + ":" + "\n"
             toReturn += "Phone number: " + str(data[0]['phonenumber']) + "\n"
             toReturn += "Roll number: " + str(data[0]['rollnumber']) + "\n"
             toReturn += "Excused Absences: " + str(data[0]['excused']) + "\n"
             toReturn += "Excuses: " + str(data[0]['excuses']) + "\n"
             toReturn += "Unexcused Absences: " + str(data[0]['unexcused']) + "\n"
+            toReturn += "Absences in total: " + str(data[0]['absences']) + "\n"
             toReturn += "Times Present at Chapter: " + str(data[0]['present']) + "\n"
         elif attribute == "excuses":
-            toReturn = key +"'s" + "excuses for missing chapter have been: "
+            toReturn = key[0]['value'] +"'s " + "excuses for missing chapter have been: "
             for i in range(len(data[0]['excuses'])):
                 toReturn += str(data[0]['excuses'][i]) + ", "
         else:
-            return key + "'s " + attribute + " is: " + str(data[0][attribute])
+            if attribute == "absences" or "unexcused" or "excused":
+                return key[0]['value'] + " has been " + attribute + " at chapter " + str(data[0][attribute] + " times.")
+            return key[0]['value'] + "'s " + attribute + " is: " + str(data[0][attribute])
     else:
         toReturn = "I'm sorry, I could not find " + str(key[0]['value']) + "\n"
         toReturn += " in " + str(table) + ". Please make sure it is spelled correctly."

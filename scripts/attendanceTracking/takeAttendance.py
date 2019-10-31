@@ -63,7 +63,7 @@ def writeAttendanceDataToFile(attendanceData):
 
 
 def takeAttendance():
-	filePath = "C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\Attendances\\"
+	filePath = "C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\Attendances\\"
 
 	date = datetime.datetime.now()
 	today = date.today()
@@ -71,7 +71,7 @@ def takeAttendance():
 	
 	outputFile = open(filePath + today + ".txt", "w")
 	
-	excuses = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\excuses.txt", "r")
+	excuses = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt", "r")
 	
 	excuseList = {}
 	
@@ -82,7 +82,7 @@ def takeAttendance():
 		excuseList[split[0]]= split[1].strip()
 		curLine = excuses.readline()
 
-	members = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\ListFile.txt","r")
+	members = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt","r")
 	curLine = members.readline().strip()
 	totalMembers = 0
 	presentCount = 0

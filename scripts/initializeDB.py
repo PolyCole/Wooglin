@@ -69,8 +69,8 @@ def initializeMembers(table, seedFile):
 		try:
 			seedFile = open(seedFile, "r")
 			
-			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\ListFile.txt")
-			chapterList = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTaking\\ListFile.txt", "w")
+			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt")
+			chapterList = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt", "w")
 			
 			#Getting rid of placeholder line
 			seedFile.readline()
