@@ -41,13 +41,13 @@ def lambda_handler(data, context):
             if text == os.environ['SECRET_PROMPT']:
                 sendmessage(os.environ['SECRET_RESPONSE'])
             elif text == "help":
-                sendmessage("Here's a link to my documentation: https://github.com/PolyCole/Wooglin/README.md")
+                sendmessage("Here's a link to my documentation: https://github.com/PolyCole/Wooglin/#Documentation")
             elif text == "":
                 return "200 OK"
             else:
                 processMessage(slack_event)
         except Exception as e:
-            sendmessage("I've encountered an error: " + str(e))
+            sendmessage("I've encountered an error: " + e)
 
         return "200 OK"
 
@@ -94,7 +94,7 @@ def processMessage(slack_event):
         action = "confused"
         confidence = 0
 
-    if action == "confused" or confidence < 0.70:
+    if action == "confused" or confidence < 0.98:
         sendmessage("I'm sorry, I don't quite understand. To see my documentation, type help")
     elif action == "greeting":
         sendmessage(GreetUser.greet(slack_event['user']))

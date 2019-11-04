@@ -36,7 +36,11 @@ def smshandler(resp):
 
         wooglin.sendmessage("I have texted the sober bros: " + message)
     else:
-        response = sendsms(key, message)
+        print("I'm trying to send: " + message)
+        # TODO RE-INSTATE ME ONCE WE HAVE TWILIO CREDS
+        # response = sendsms(key, message)
+        response = True
+
         if response:
             wooglin.sendmessage("Success! I sent " + key + " the message: " + message)
         else:
