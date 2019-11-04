@@ -18,9 +18,13 @@ The following outlines the go-to phrasing that the bot has been trained on exces
 | :------------ | ------------- |
 | Sending a text to someone     | Send a text to [person] saying "[message]" |
 | Getting stored info on someone     | Wooglin, please get all information on [person].      |
-| Getting someone's unexcused absences | Wooglin, how many times has [person] been unexcused from chapter?      |
-| Getting someone's excused absences | Wooglin, how many times has [person] been excused from chapter? |
-| Getting someone's excuses for missing chapter | Wooglin, what have been [person]'s excuses for missing chapter? |
+| Getting unexcused absences | Wooglin, how many times has [person] been unexcused from chapter?      |
+| Getting excused absences | Wooglin, how many times has [person] been excused from chapter? |
+| Getting excuses for missing chapter | Wooglin, what have been [person]'s excuses for missing chapter? |
+| Getting phone number | Wooglin, what is [name]'s phone number? |
+| Getting roll number | Wooglin, what is [name]'s roll number? |
+| Getting sober bros | Wooglin, who are the sober bros on [date] | 
+| Adding someone as a sober bro | Wooglin, [name] is a sober bro on [date] | 
 
 ***
 ### Technicals
