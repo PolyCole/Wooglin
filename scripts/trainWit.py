@@ -43,7 +43,7 @@ try:
         if len(template) > 1:
             message = template[0] + people[people_index] + template[1]
         else:
-            message = template[0] + people[people_index]
+            message = template[0]
 
         print("Sending: " + message + " to NLP engine")
         witClient.message(message)

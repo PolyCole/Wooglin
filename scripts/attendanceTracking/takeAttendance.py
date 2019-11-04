@@ -4,15 +4,26 @@ import math
 import time
 import boto3
 import sys
+import os
 
 def attendanceDriver():
 	attendanceData = takeAttendance()
-	time.sleep(10)
-	writeToDB = input("Is there any reason I shouldn't write this data to file?")
+	time.sleep(5)
+	writeToDB = input("Should I write this data to the DB?: ")
 
-	if writeToDB == "no" or writeToDB == "No":
+	if writeToDB == "yes" or "Yes":
 		writeAttendanceDataToFile(attendanceData)
-		print("Written. Goodbye.")
+		decision = input("Before I go would you like me to clear the excuses file?: ")
+
+		if decision == "yes" or "Yes":
+			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt")
+			file = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt", "w")
+			file.close()
+			print("Alrighty! I've finished recreating it. Farewell for now.")
+		else:
+			print("Okay. I'll leave it. Goodbye!")
+
+
 		sys.exit()
 	else:
 		print("Alright. Please make your changes and I'll wait till you return...")
@@ -58,11 +69,24 @@ def writeAttendanceDataToFile(attendanceData):
 	print("I've sucessfully updated attendance data for today.")
 
 
-
-
-
-
 def takeAttendance():
+	excuses = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt", "r")
+
+	excuseList = {}
+
+	curLine = excuses.readline()
+
+	while curLine != '':
+		split = curLine.split(",")
+		excuseList[split[0]] = split[1].strip()
+		curLine = excuses.readline()
+
+	if len(excuseList) == 0:
+		decision = input("Oops! It looks like there aren't any reported excuses. That's weird. Would you like to continue?: ")
+		if decision == "no" or "No" or "NO":
+			print("Alright. I'll halt execution.")
+			sys.exit()
+
 	filePath = "C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\Attendances\\"
 
 	date = datetime.datetime.now()
@@ -70,17 +94,7 @@ def takeAttendance():
 	today = today.strftime("%m-%d-%Y")
 	
 	outputFile = open(filePath + today + ".txt", "w")
-	
-	excuses = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt", "r")
-	
-	excuseList = {}
-	
-	curLine = excuses.readline()
-	
-	while curLine != '':
-		split = curLine.split(",")
-		excuseList[split[0]]= split[1].strip()
-		curLine = excuses.readline()
+
 
 	members = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt","r")
 	curLine = members.readline().strip()
@@ -92,7 +106,7 @@ def takeAttendance():
 	while curLine != '':
 		try:
 			excuse = excuseList[curLine]
-			outputFile.write(curLine + "\t\t\t\t" + excuse + "\n")
+			outputFile.write(curLine + "\t\t\t\t\t" + excuse + "\n")
 			totalMembers = totalMembers + 1
 			attendanceData[curLine] = excuse
 		except KeyError:
@@ -110,7 +124,7 @@ def takeAttendance():
 				presentCount = presentCount + 1
 
 			totalMembers = totalMembers + 1
-			outputFile.write(curLine + "\t\t\t\t" + attendanceStanding + "\n")
+			outputFile.write(curLine + "\t\t\t\t\t" + attendanceStanding + "\n")
 
 			attendanceData[curLine] = attendanceStanding
 
