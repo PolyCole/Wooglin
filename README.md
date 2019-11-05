@@ -25,6 +25,7 @@ The following outlines the go-to phrasing that the bot has been trained on exces
 | Getting roll number | Wooglin, what is [name]'s roll number? |
 | Getting sober bros | Wooglin, who are the sober bros on [date] | 
 | Adding someone as a sober bro | Wooglin, [name] is a sober bro on [date] | 
+| Removing someone as a sober bro | Wooglin, [name] is not a sober bro on [date] |
 
 ***
 ### Technicals
