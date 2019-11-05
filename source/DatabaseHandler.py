@@ -35,6 +35,9 @@ def dbhandler(resp):
     elif operation == "modify":
         modifyOperation(resp,table,key)
     elif operation == "delete":
+        if table == "soberbros":
+            date = extract_date(resp)
+            sober_bro_deassign("soberbros", key, date)
         deleteOperation(table, key)
     elif operation == "create":
         createOperation(table, key)
@@ -103,6 +106,12 @@ def getOperationSoberBros(table, date):
         KeyConditionExpression=Key('date').eq(date)
     )
 
+    if len(response['Items']) == 0:
+        message = "Looks like there aren't any sober bro shifts for " + str(unprocessDate(date)) + " yet."
+        wooglin.sendmessage(message)
+        return
+
+
     wooglin.sendmessage(stringify_soberbros(response['Items']))
 
 
@@ -147,38 +156,36 @@ def modifyOperation(resp, table, key):
 
 
 def sober_bro_assign(tablename, key, date):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(tablename)
+    SoberBros = list_sober_bros(tablename, date)
+    key = key[0]['value']
 
-    response = table.query(
-        KeyConditionExpression=Key('date').eq(date)
-    )
+    SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
-    response = response['Items']
-    print("sober_bro_assign is working with: " + str(response))
-
-    SoberBros = []
-    SoberBros.append(response[0]['soberbro1'])
-    SoberBros.append(response[0]['soberbro2'])
-    SoberBros.append(response[0]['soberbro3'])
-    SoberBros.append(response[0]['soberbro4'])
-
-    for x in range(4):
-        if SoberBros[x] == key[0]['value']:
-            wooglin.sendmessage("Whoops! It looks like " + key[0]['value'] + " is already a sober bro on " + str(unprocessDate(date)))
-            return
-        if SoberBros[x] == "NO ONE":
-            SoberBros[x] = key[0]['value']
-            numBros = x + 1
-            break
-        else:
-            numBros = -1
-
-
-    if numBros == -1:
-        wooglin.sendmessage("It looks like the sober bro shift on " + str(unprocessDate(date)) + " is already full. I couldn't add " + str(key[0]['value']))
+    if len(SoberBros) == 4:
+        wooglin.sendmessage("It looks like the sober bro shift on " + str(
+            unprocessDate(date)) + " is already full. I couldn't add " + str(key))
         return
 
+    if SoberBros.count(key) == 1:
+        wooglin.sendmessage(
+            "Whoops! It looks like " + str(key) + " is already a sober bro on " + str(unprocessDate(date)))
+        return
+
+    SoberBros.append(key)
+
+    message = "Alrighty! I've added " + str(key) + " to the sober bro shift on " + str(unprocessDate(date)) + ".\nThere are now " + str(len(SoberBros)) + " sober brothers on that date."
+
+    # Gotta have the proper grammar...
+    if len(SoberBros) == 1:
+        left = message.split("are")
+        right = left[1].split("brothers")
+        message = left[0] + "is" + right[0] + "brother" + right[1]
+
+    while len(SoberBros) != 4:
+        SoberBros.append("NO ONE")
+
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    table = dynamodb.Table(tablename)
     table.put_item(
         Item={
             'date': date,
@@ -188,13 +195,6 @@ def sober_bro_assign(tablename, key, date):
             'soberbro4': SoberBros[3]
         }
     )
-    message = "Alrighty! I've added " + str(key[0]['value']) + " to the sober bro shift on " + str(unprocessDate(date)) + ".\nThere are now " + str(numBros) + " sober brothers on that date."
-
-    # Gotta have the proper grammar...
-    if numBros == 1:
-        left = message.split("are")
-        right = left[1].split("brothers")
-        message = left[0] + "is" + right[0] + "brother" + right[1]
 
     wooglin.sendmessage(message)
 
@@ -217,8 +217,48 @@ def deleteOperation(table, key):
     wooglin.sendmessage("Well I've done it. If " + str(peopleIveDeleted[:len(peopleIveDeleted)-2]) + " existed before, they don't now")
 
 
-def sober_bro_deassign(table, key, date):
-    df
+def sober_bro_deassign(tablename, key, date):
+    SoberBros = list_sober_bros(tablename, date)
+    key = key[0]['value']
+
+    SoberBros = [x for x in SoberBros if x != "NO ONE"]
+
+    try:
+        SoberBros.remove(key)
+    except ValueError:
+        wooglin.sendmessage(
+            "Oops. It looks like " + str(key) + " is not currently a sober bro on " + str(unprocessDate(date)))
+        return
+
+    message = "Alrighty! I've removed " + str(key) + " from the sober bro shift on " + str(
+        unprocessDate(date)) + ".\nThere are now " + str(len(SoberBros)) + " sober brothers on that date."
+
+    # Gotta have the proper grammar...
+    if len(SoberBros) == 1:
+        left = message.split("are")
+        right = left[1].split("brothers")
+        message = left[0] + "is" + right[0] + "brother" + right[1]
+
+    wooglin.sendmessage(message)
+
+    while len(SoberBros) != 4:
+        SoberBros.append("NO ONE")
+
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    table = dynamodb.Table("soberbros")
+
+    table.put_item(
+        Item={
+            'date': date,
+            'soberbro1': SoberBros[0],
+            'soberbro2': SoberBros[1],
+            'soberbro3': SoberBros[2],
+            'soberbro4': SoberBros[3]
+        }
+    )
+
+
+
 
 def createOperation(tablename, key):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -240,6 +280,26 @@ def createOperation(tablename, key):
     toReturn = "Well, I've added " + str(peopleIveCreated[:len(peopleIveCreated) -1]) + " to " + tablename
     toReturn += ". However, their data is all null! You should probably fix that..."
     wooglin.sendmessage(toReturn)
+
+
+def list_sober_bros(tablename, date):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    table = dynamodb.Table(tablename)
+
+    response = table.query(
+        KeyConditionExpression=Key('date').eq(date)
+    )
+
+    response = response['Items']
+    print("sober_bro_assign is working with: " + str(response))
+
+    SoberBros = []
+    SoberBros.append(response[0]['soberbro1'])
+    SoberBros.append(response[0]['soberbro2'])
+    SoberBros.append(response[0]['soberbro3'])
+    SoberBros.append(response[0]['soberbro4'])
+    return SoberBros
+
 
 # Puts the data into a more readable form.
 def stringify_member(data, table, key, attribute):
@@ -286,9 +346,6 @@ def stringify_update(data, key, attribute, new_value):
 
 
 def stringify_soberbros(response):
-    if(len(response) == 0):
-        return "Looks like there aren't any sober bros for that date yet."
-
     SoberBros = []
     SoberBros.append(response[0]['soberbro1'].strip())
     SoberBros.append(response[0]['soberbro2'].strip())
