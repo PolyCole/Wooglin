@@ -3,41 +3,48 @@ import json
 import os
 import random
 
-def greet(userid):
-    name = getuserinfo(userid)
+
+# Method greets the user using their name.
+def greet(user_id):
+    name = get_user_info(user_id)
+
+    # Greetings to select from.
     greetings = ["Hi", "Hello", "Hey", "What\'s up",
                "Waddup", "How are we", "Howdy", "Yo",
-               "Good day", "What's poppin", "What's crackalakin'",
+               "Good day", "What's poppin", "What\'s crackalakin'",
                "Hi there", "Hello there", "Hey there", "Howdy there",
-               ]
+               "Hello there"]
 
-    greetingNum = random.randint(0, len(greetings) - 1)
-    return greetings[greetingNum] + " " + name
+    greeting_num = random.randint(0, len(greetings) - 1)
+    return greetings[greeting_num] + " " + name + "."
 
 
-def getuserinfo(userID):
+# Getting the user information from the slack API.
+def get_user_info(user_id):
     try:
-        SLACK_URL_SPECIAL = "https://slack.com/api/users.info"
+        slack_url_special = "https://slack.com/api/users.info"
+
         data = urllib.parse.urlencode(
             (
                 ("token", os.environ["BOT_TOKEN"]),
-                ("user", userID),
+                ("user", user_id),
                 ("include_locale", 'false')
             )
         )
 
         data = data.encode("ascii")
-        request2 = urllib.request.Request(SLACK_URL_SPECIAL, data=data, method="POST")
+        request2 = urllib.request.Request(slack_url_special, data=data, method="POST")
 
         request2.add_header(
             "Content-Type",
             "application/x-www-form-urlencoded"
         )
 
-        # Getting reponse from server and turning it into a dict.
-        userdata = json.loads((urllib.request.urlopen(request2).read()).decode())
+        # Getting response from server and turning it into a dict.
+        user_data = json.loads((urllib.request.urlopen(request2).read()).decode())
 
     except Exception as e:
         print(e)
 
-    return userdata["user"]["real_name"]
+    # Giving back the real name of the user.
+    return user_data["user"]["real_name"]

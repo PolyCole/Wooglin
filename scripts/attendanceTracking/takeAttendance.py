@@ -141,6 +141,11 @@ def takeAttendance():
 		print("Short by: " + str(round(0.75 - proportion, 3)* 100) + "%")
 	print("------------------------------")
 
+	outputFile.write("\n\n-----------------------------------")
+	outputFile.write("Members present: " + str(presentCount) + "/" + totalMembers)
+	outputFile.write("Proportion of chapter represented: " + str(round(proportion, 4)))
+	outputFile.write("-----------------------------------")
+
 	outputFile.close()
 	return attendanceData
 
