@@ -7,15 +7,28 @@ from boto3.dynamodb.conditions import Key
 def smshandler(resp):
     try:
         message = resp['entities']['key'][0]['value']
-    except KeyError as e:
+    except KeyError:
         wooglin.sendmessage("Uh-oh. Looks like I wasn't able to discern what you wanted me to send. Talk to Cole.")
         return
+
+    # Ensuring we get the proper date regardless of language used.
+    if message == "ListSoberBros":
+        try:
+            date = resp['entities']['datetime'][0]['value']
+        except KeyError:
+            try:
+                date = resp['entities']['datetime'][0]['from']['value']
+            except KeyError:
+                now = datetime.datetime.now()
+                date = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
+
+        message = create_sober_bro_message(date)
 
     try:
         key = resp['entities']['key'][0]['value']
         individual_sms(key, message);
         return
-    except KeyError as e:
+    except KeyError:
         print("No key specified... Could be a group message...")
 
     try:
@@ -29,7 +42,7 @@ def smshandler(resp):
         elif smslist == "soberbros":
             send_sms_soberbros(message)
             return
-    except KeyError as e:
+    except KeyError:
         wooglin.sendmessage("Oops. It looks like neither a name nor a smslist was specified. Talk to Cole.")
         return
 
@@ -148,6 +161,37 @@ def get_phone_number(key):
 
     return number
 
+
+def create_sober_bro_message(date):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    table = dynamodb.Table('soberbros')
+
+    response = table.query(
+        KeyConditionExpression=Key('date').eq(date)
+    )
+
+    if len(response['Items']) == 0:
+        message = "Looks like there aren't any sober bros for " + str(
+            DatabaseHandler.unprocessDate(date)) + ".\n Thus, I was unable to send them a message."
+        wooglin.sendmessage(message)
+        return
+
+    SoberBros = []
+    SoberBros.append(response[0]['soberbro1'].strip())
+    SoberBros.append(response[0]['soberbro2'].strip())
+    SoberBros.append(response[0]['soberbro3'].strip())
+    SoberBros.append(response[0]['soberbro4'].strip())
+    SoberBros = [x for x in SoberBros if x != "NO ONE"]
+
+    message = "Here are the sober bros for " + str(DatabaseHandler.unprocessDate(date)) + ": \n"
+
+    for person in SoberBros:
+        message += str(person)
+        number = get_phone_number(person)
+        message += " (" + str(number) + ")\n"
+
+    message += "If you are need of assistance, please contact one of these people."
+    return message
 
 def sendsms(number, message):
     # TODO add in code to make this message only rturn true when message went through.
