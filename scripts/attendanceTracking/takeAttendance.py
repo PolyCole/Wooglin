@@ -9,13 +9,15 @@ import os
 def attendanceDriver():
 	attendanceData = takeAttendance()
 	time.sleep(5)
+
+	# Are we pushing this data up to the central DB?
 	writeToDB = input("Should I write this data to the DB?: ")
 
-	if writeToDB == "yes" or "Yes":
+	if writeToDB == "yes" or  writeToDB == "Yes":
 		writeAttendanceDataToFile(attendanceData)
 		decision = input("Before I go would you like me to clear the excuses file?: ")
 
-		if decision == "yes" or "Yes":
+		if decision == "yes" or deicion == "Yes":
 			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt")
 			file = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\excuses.txt", "w")
 			file.close()
@@ -83,7 +85,7 @@ def takeAttendance():
 
 	if len(excuseList) == 0:
 		decision = input("Oops! It looks like there aren't any reported excuses. That's weird. Would you like to continue?: ")
-		if decision == "no" or "No" or "NO":
+		if decision == "no" or decision == "No" or decision == "NO":
 			print("Alright. I'll halt execution.")
 			sys.exit()
 
@@ -112,7 +114,6 @@ def takeAttendance():
 		except KeyError:
 			print(curLine + "\n\n")
 			attendanceStanding = ord(getch())
-			print("-------------------")
 
 			attendanceStanding = checkValidStanding(attendanceStanding)
 
@@ -122,7 +123,10 @@ def takeAttendance():
 
 			if attendanceStanding  == 'Present':
 				presentCount = presentCount + 1
-
+				print("Present")
+			else:
+				print("Absent")
+			print("-------------------")
 			totalMembers = totalMembers + 1
 			outputFile.write(curLine + "\t\t\t\t\t" + attendanceStanding + "\n")
 
@@ -142,7 +146,7 @@ def takeAttendance():
 	print("------------------------------")
 
 	outputFile.write("\n\n-----------------------------------")
-	outputFile.write("Members present: " + str(presentCount) + "/" + totalMembers)
+	outputFile.write("Members present: " + str(presentCount) + "/" + str(totalMembers))
 	outputFile.write("Proportion of chapter represented: " + str(round(proportion, 4)))
 	outputFile.write("-----------------------------------")
 

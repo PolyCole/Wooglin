@@ -68,7 +68,8 @@ def initializeMembers(table, seedFile):
 	with table.batch_writer() as batch:
 		try:
 			seedFile = open(seedFile, "r")
-			
+
+			# Deleting and re-creating list file
 			os.remove("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt")
 			chapterList = open("C:\\Users\\Five\\PycharmProjects\\Wooglin\\scripts\\attendanceTracking\\ListFile.txt", "w")
 			
@@ -80,10 +81,28 @@ def initializeMembers(table, seedFile):
 
 			while currentLine != '':
 				processed = currentLine.split(",")
-				name = processed[0]
+
+				# Because name has a middle initial, we'll have
+				# to do a little bit more formatting work up front.
+				name = processed[0].split(" ")
+
+				if(len(name) > 2):
+					name.pop(1)
+
+				new_name = ""
+				for x in range(len(name)):
+					new_name += str(name[x]) + " "
+				name = new_name.strip()
+				
 				rollnumber = processed[1]
 				phonenumber = processed[2]
-				
+				email = processed[3]
+				address = ""
+
+				for x in range (4, len(processed)):
+					address += str(processed[x])
+
+				address = address.strip()
 				chapterList.write(name + "\n")
 
 				batch.put_item(
@@ -91,6 +110,8 @@ def initializeMembers(table, seedFile):
 						'name': name,
 						'phonenumber': phonenumber,
 						'rollnumber': rollnumber,
+						'address' : address,
+						'email' : email,
 						'present':0,
 						'unexcused':0,
 						'excused':0,
