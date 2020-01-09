@@ -2,7 +2,7 @@ import boto3, sys, datetime
 from boto3.dynamodb.conditions import Key, Attr
 from source import wooglin
 
-def dbhandler(resp):
+def dbhandler(resp, user):
     operation = resp['entities']['db_operation'][0]['value']
 
     try:
@@ -38,7 +38,8 @@ def dbhandler(resp):
         if table == "soberbros":
             date = extract_date(resp)
             sober_bro_deassign("soberbros", key, date)
-        deleteOperation(table, key)
+        else:
+            deleteOperation(table, key, user)
     elif operation == "create":
         createOperation(table, key)
     elif operation == "assign":
@@ -198,14 +199,22 @@ def sober_bro_assign(tablename, key, date):
 
     wooglin.sendmessage(message)
 
-def deleteOperation(table, key):
+def deleteOperation(table, key, user):
+    # TODO Change this into a method in a handler. Perhaps a boto3 handler?
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table(table)
+    backup_table = dynamodb.Table('members_backup')
 
     peopleIveDeleted = ""
 
     for x in range(len(key)):
         print("Delete is attempting to DELETE: " + str(key[x]['value']))
+
+        entry = table.query(
+            KeyConditionExpression=Key('name').eq(key[x]['value'])
+        )
+
+        backup_entry(entry, backup_table)
 
         response = table.delete_item(
             Key={
@@ -214,7 +223,27 @@ def deleteOperation(table, key):
         )
 
         peopleIveDeleted += str(key[x]['value']) + ", "
-    wooglin.sendmessage("Well I've done it. If " + str(peopleIveDeleted[:len(peopleIveDeleted)-2]) + " existed before, they don't now")
+    wooglin.sendmessage("Well I've done it. If " + str(peopleIveDeleted[:len(peopleIveDeleted)-2]) + " existed before, they don't now. If you accidentally deleted someone, contact Cole.")
+
+
+def backup_entry(entry, backup_table):
+    entry = entry['Items'][0]
+    backup_table.put_item(
+        Item={
+            'name': entry['name'],
+            'phonenumber': entry['phonenumber'],
+            'rollnumber': entry['rollnumber'],
+            'address': entry['address'],
+            'email': entry['email'],
+            'present': entry['present'],
+            'unexcused': entry['unexcused'],
+            'excused': entry['excused'],
+            'excuses': entry['excuses'],
+            'absences': entry['absences']
+        }
+    )
+
+    print("Alrighty. I completed the operation, but I just added the entry to the backup table just to be sure.")
 
 
 def sober_bro_deassign(tablename, key, date):
@@ -272,7 +301,14 @@ def createOperation(tablename, key):
             Item={
                 'name': key[x]['value'],
                 'phonenumber': 0,
-                'rollnumber': 0
+                'rollnumber': 0,
+                'address': "No Address",
+                'email' : "no email",
+                'present': 0,
+                'unexcused': 0,
+                'excused': 0,
+                'excuses': [],
+                'absences': 0
             }
         )
         peopleIveCreated += str(key[x]['value']) + ", "
