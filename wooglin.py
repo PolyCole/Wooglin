@@ -35,6 +35,9 @@ def lambda_handler(data, context):
         text = slack_event["text"].lower()
         text = text[13::] if text.find('@') != -1 else text
 
+        sendmessage("WADDUP WADDUP")
+        return "200 OK"
+
         # Getting ID of channel where message originated.
         SLACK_CHANNEL = slack_event["channel"]
 
