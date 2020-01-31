@@ -138,6 +138,7 @@ def takeAttendance():
 
 	print("\n\n\n------------------------------")
 	print("CHAPTER PROPORTION: " + str(round(proportion, 4)))
+	print("We currently have " + str(presentCount))
 	if proportion > 0.75:
 		print("We have a Quorum.")
 	else:
