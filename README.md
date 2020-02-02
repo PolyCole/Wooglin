@@ -16,7 +16,9 @@ The following outlines the go-to phrasing that the bot has been trained on exces
 
 | Goal          | Phrasing           |
 | :------------ | ------------- |
-| Sending a text to someone     | Send a text to [person] saying "[message]" |
+| Sending a text to someone     | Wooglin, send a text message to [person] saying "[message]" |
+| Sending the sober bro information to someone | Wooglin, please send [person] the sober bro information for [time] |
+| Sending a message to the executive board | Wooglin, please send the executive board a text message saying [message] | 
 | Getting stored info on someone     | Wooglin, please get all information on [person].      |
 | Getting unexcused absences | Wooglin, how many times has [person] been unexcused from chapter?      |
 | Getting excused absences | Wooglin, how many times has [person] been excused from chapter? |
@@ -29,4 +31,4 @@ The following outlines the go-to phrasing that the bot has been trained on exces
 
 ***
 ### Technicals
-Wooglin physically is a series of python scripts being hosted by AWS lambda. The bot uses AWS DynamoDB for storage. To send text messages, Wooglin uses the Twilio SMS API. For general Natural Language Processing, Wooglin uses Wit.ai's NLP engine. 
+Wooglin physically is a series of python scripts zipped up and stored in an S3 bucket. The script triggers when Wooglin's API sends a POST request to AWS Lambda. The bot uses AWS DynamoDB for storage. To send text messages, Wooglin uses the Twilio SMS API. For general Natural Language Processing, Wooglin uses Wit.ai's NLP engine. 
