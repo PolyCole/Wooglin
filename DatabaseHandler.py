@@ -2,6 +2,28 @@ import boto3, sys, datetime
 from boto3.dynamodb.conditions import Key, Attr
 import wooglin
 
+def event_handled(event_id, event_time):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    table = dynamodb.Table("event_ids")
+
+    response = table.query(
+        KeyConditionExpression=Key('event_id').eq(event_id)
+    )
+
+    if(response['Count'] == 0):
+        table.put_item(
+            Item={
+                'event_id': event_id,
+                'event_time': event_time
+            }
+        )
+    else:
+        previous_event_time = response['Items'][0]['event_time']
+        if(previous_event_time == event_time):
+            print("Event already being handled, terminating")
+            return True
+    return False
+
 def dbhandler(resp, user):
     operation = resp['entities']['db_operation'][0]['value']
 
@@ -419,7 +441,8 @@ def stringify_soberbros(response):
 def unprocessDate(date):
     print("Unprocess date got:" + str(date))
     date = date.split('-')
-    dt = datetime.datetime(int(date[0]), int(date[1]), int(date[2]))
+    day = (date[2])[0:2]
+    dt = datetime.datetime(int(date[0]), int(date[1]), int(day))
     date_string = '{:%A, %B %d, %Y}'.format(dt)
     print("Unprocess date returned:" + date_string)
     return str(date_string)

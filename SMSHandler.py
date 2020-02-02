@@ -28,7 +28,6 @@ def smshandler(resp):
             except KeyError:
                 now = datetime.datetime.now()
                 date = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
-
         message = create_sober_bro_message(date)
 
     try:
@@ -38,8 +37,6 @@ def smshandler(resp):
     except KeyError:
         print("No key specified... Could be a group message...")
 
-    print("Message target: " + str(key))
-
     try:
         smslist = resp['entities']['smslist'][0]['value']
 
@@ -47,6 +44,7 @@ def smshandler(resp):
             send_sms_chapter(message)
             return
         elif smslist == "exec":
+            send_sms_exec(message)
             return
         elif smslist == "soberbros":
             send_sms_soberbros(message)
@@ -59,7 +57,7 @@ def smshandler(resp):
 def individual_sms(key, message):
     phone_number = get_phone_number(key)
     resp = sendsms(phone_number, message)
-    wooglin.sendmessage("Alright! I've sent a message saying, " + str(message) + " to " + str(key))
+    wooglin.sendmessage("Alright! I've sent a message saying, \n[" + str(message) + "]\n to " + str(key))
     return
 
 
@@ -96,7 +94,7 @@ def send_sms_soberbros(message):
     SoberBros.append(response[0]['soberbro1'].strip())
     SoberBros.append(response[0]['soberbro2'].strip())
     SoberBros.append(response[0]['soberbro3'].strip())
-    SoberBros.append(response[0]['soberbro4'].strip())
+    # SoberBros.append(response[0]['soberbro4'].strip())
     SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
     errors = []
@@ -125,10 +123,10 @@ def send_sms_soberbros(message):
 
 def send_sms_exec(message):
     exec_members = [
+        "Cole Polyak",
         "Luke Srsen",
         "Evan Prechodko",
-        "Cole Polyak",
-        "Tom Oexeman",
+        "Thomas Oexeman",
         "Adam Snow",
         "Deegan Coles",
         "Rex Fathauer",
@@ -138,11 +136,13 @@ def send_sms_exec(message):
     ]
 
     errors = []
+    message = "Message for the Executive Board: " + message
 
     for person in exec_members:
+        print("Trying to notify: " + person)
         number = get_phone_number(person)
-        resp  = sendsms(number, message)
-        if not resp:
+        resp = sendsms(number, message)
+        if (not resp):
             errors.append(person)
 
     if len(errors) == 0:
@@ -176,21 +176,24 @@ def create_sober_bro_message(date):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table('soberbros')
 
+    date = date[0:10]
+
     response = table.query(
         KeyConditionExpression=Key('date').eq(date)
     )
 
-    if len(response['Items']) == 0:
-        message = "Looks like there aren't any sober bros for " + str(
-            DatabaseHandler.unprocessDate(date)) + ".\n Thus, I was unable to send them a message."
-        wooglin.sendmessage(message)
-        return
+    response = response['Items']
+
+    if len(response) == 0:
+        message = "Looks like there aren't any sober bros for " + str(DatabaseHandler.unprocessDate(date))
+        return message
 
     SoberBros = []
-    SoberBros.append(response[0]['soberbro1'].strip())
-    SoberBros.append(response[0]['soberbro2'].strip())
-    SoberBros.append(response[0]['soberbro3'].strip())
-    SoberBros.append(response[0]['soberbro4'].strip())
+    SoberBros.append((response[0])['soberbro1'].strip())
+    SoberBros.append((response[0])['soberbro2'].strip())
+    SoberBros.append((response[0])['soberbro3'].strip())
+
+    print(SoberBros)
     SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
     message = "Here are the sober bros for " + str(DatabaseHandler.unprocessDate(date)) + ": \n"
@@ -199,8 +202,8 @@ def create_sober_bro_message(date):
         message += str(person)
         number = get_phone_number(person)
         message += " (" + str(number) + ")\n"
-
-    message += "If you are need of assistance, please contact one of these people."
+    message += "If you are in need of assistance, please contact one of these people."
+    print("CSBM returned: " + message)
     return message
 
 def sendsms(number, message):

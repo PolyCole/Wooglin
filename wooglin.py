@@ -27,6 +27,12 @@ def lambda_handler(data, context):
     # Getting the data of the event.
     slack_event = data['event']
 
+    event_id = data['event_id']
+    event_time = data['event_time']
+
+    if DatabaseHandler.event_handled(event_id, event_time):
+        return "200 OK"
+
     # Ignore other bot events.
     if "bot_id" in slack_event:
         logging.warn("Ignore bot event")
@@ -37,9 +43,6 @@ def lambda_handler(data, context):
 
         # Getting ID of channel where message originated.
         SLACK_CHANNEL = slack_event["channel"]
-
-        sendmessage("WADDUP WADDUP")
-        return "200 OK"
 
         if(text.find("wooglin") != -1):
             try:
@@ -93,7 +96,7 @@ def processMessage(slack_event):
         action = "confused"
         confidence = 0
 
-    if action == "confused" or confidence < 0.98:
+    if action == "confused" or confidence < 0.95:
         sendmessage("I'm sorry, I don't quite understand. To see my documentation, type help")
     elif action == "greeting":
         sendmessage(GreetUser.greet(user))
