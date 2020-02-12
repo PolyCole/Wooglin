@@ -1,6 +1,7 @@
 import os
 import logging
 import urllib
+import re
 
 from wit import Wit
 import GreetUser
@@ -17,6 +18,9 @@ SLACK_URL = "https://slack.com/api/chat.postMessage"
 
 
 def lambda_handler(data, context):
+    print("RECEIVED:")
+    print(data)
+
     global SLACK_CHANNEL
     #print("Conversation taking place in channel: " + str(SLACK_CHANNEL))
 
@@ -34,17 +38,19 @@ def lambda_handler(data, context):
         return "200 OK"
 
     # Ignore other bot events.
-    if "bot_id" in slack_event:
-        logging.warn("Ignore bot event")
+    if "subtype" in slack_event:
+        if slack_event['subtype'] == "bot_message":
+            logging.warning("Ignore bot event")
+            return "200 OK"
     else:
         # Parses out garbage text if user @'s the bot'
         text = slack_event["text"].lower()
-        text = text[13::] if text.find('@') != -1 else text
 
         # Getting ID of channel where message originated.
         SLACK_CHANNEL = slack_event["channel"]
 
-        if(text.find("wooglin") != -1):
+        if text.find(os.environ['MY_ID']) != -1:
+            text = re.sub('<@.........>',"Wooglin,",text).strip()
             try:
                 if text == os.environ['SECRET_PROMPT']:
                     sendmessage(os.environ['SECRET_RESPONSE'])
