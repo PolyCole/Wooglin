@@ -7,6 +7,7 @@ from wit import Wit
 import GreetUser
 import DatabaseHandler
 import SMSHandler
+import Wooglin_RM
 
 from urllib import request, parse
 
@@ -20,13 +21,16 @@ SLACK_URL = "https://slack.com/api/chat.postMessage"
 def lambda_handler(data, context):
     print("RECEIVED:")
     print(data)
-
     global SLACK_CHANNEL
-    #print("Conversation taking place in channel: " + str(SLACK_CHANNEL))
 
     # Handles initial challenge with Slack's verification.
     if "challenge" in data:
         return data["challenge"]
+
+    if 'body' in data:
+        if data['body'] is not None:
+            Wooglin_RM.handler(data);
+            return "200 OK"
 
     # Getting the data of the event.
     slack_event = data['event']
@@ -55,7 +59,7 @@ def lambda_handler(data, context):
                 if text == os.environ['SECRET_PROMPT']:
                     sendmessage(os.environ['SECRET_RESPONSE'])
                 else:
-                    processMessage(slack_event)
+                    process_message(slack_event)
             except Exception as e:
                 sendmessage("I've encountered an error: " + str(e))
 
@@ -89,7 +93,7 @@ def sendmessage(message):
     return "200 OK"
 
 
-def processMessage(slack_event):
+def process_message(slack_event):
     witClient = Wit(os.environ['WIT_TOKEN'])
 
     resp = witClient.message(slack_event['text'].lower())
@@ -114,5 +118,3 @@ def processMessage(slack_event):
         sendmessage("Here's a link to my documentation: https://github.com/PolyCole/Wooglin/#Documentation")
     else:
         sendmessage("Whoops! It looks like that feature hasn't been hooked up yet.")
-
-

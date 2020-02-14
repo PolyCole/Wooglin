@@ -32,7 +32,7 @@ def smshandler(resp):
 
     try:
         key = resp['entities']['key'][0]['value']
-        individual_sms(key, message);
+        individual_sms_name(key, message);
         return
     except KeyError:
         print("No key specified... Could be a group message...")
@@ -54,7 +54,7 @@ def smshandler(resp):
         return
 
 
-def individual_sms(key, message):
+def individual_sms_name(key, message):
     phone_number = get_phone_number(key)
     resp = sendsms(phone_number, message)
     wooglin.sendmessage("Alright! I've sent a message saying, \n[" + str(message) + "]\n to " + str(key))
@@ -219,21 +219,21 @@ def sendsms(number, message):
     auth_token = os.environ["TWILIO_TOKEN"]
     client = Client(account_sid, auth_token)
 
-    message = client.messages \
-        .create(
+    message = client.messages.create(
         body=message,
-        from_=os.environ["TWILIO_NUMBER"],
+        from_=os.environ["TWILIO_MESSAGING_SERVICE_SID"],
         to=number
     )
-
     print("Message: " + str(message))
-    time.sleep(4)
 
     # TODO Ensure that when message fails, user gets notice.
     return True
 
 
 def fix_phone_number_format(number):
+    if number.find('+1') != -1:
+        return number
+
     split = number.split(".")
     new_number = "+1"
 
