@@ -61,14 +61,25 @@ def individual_sms_name(key, message):
     return
 
 
-# TODO NEED TO ENSURE THIS WORKS WITH TWILIO
+# TODO Need to test with chapter.
 def send_sms_chapter(message):
     data = DatabaseHandler.scanTable('members')
+
+    account_sid = os.environ["TWILIO_SID"]
+    auth_token = os.environ["TWILIO_TOKEN"]
+    client = Client(account_sid, auth_token)
+
     for person in data:
         number = person['phonenumber']
-        response = sendsms(number, message)
 
-    if response:
+        binding_message = '{"binding_type":"sms", "address":"' + fix_phone_number_format(number) + '\"}'
+
+        notification = client.notify.services(os.environ['TWILIO_NOTIFY_SERVICE_SID']) \
+            .notifications.create(
+            to_binding=binding_message,
+            body=message)
+
+    if notification:
         wooglin.sendmessage("Alrighty! I have notified the chapter: " + message)
     else:
         wooglin.sendmessage("I was unable to send that message to the chapter.")
