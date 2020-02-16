@@ -186,9 +186,9 @@ def start_help_handler(message):
         name = response['Items'][0]['name']
         table.put_item(
             Item={
-                'number':response['Items'][0]['number'],
-                'name':response['Items'][0]['name'],
-                'arrived':response['Items'][0]['arrived'],
+                'number': response['Items'][0]['number'],
+                'name': response['Items'][0]['name'],
+                'arrived': response['Items'][0]['arrived'],
                 'help_flag': True,
                 'help_flag_raised': get_arrival_time()
             }
@@ -201,10 +201,10 @@ def start_help_handler(message):
 
 def notify_parties(name, message="nomessage"):
     if message == "nomessage":
-        # SMSHandler.send_sms_exec(alert_message(name))
+        SMSHandler.send_sms_exec(alert_message(name))
         # SMSHandler.send_sms_soberbros(alert_message(name))
-        SMSHandler.sendsms("+19522559343", alert_message(name))
+        # SMSHandler.sendsms("+19522559343", alert_message(name))
     else:
-        # SMSHandler.send_sms_exec("Message from " + name + ": " + process_message(message))
+        SMSHandler.send_sms_exec("Message from " + name + ": " + process_message(message))
         # SMSHandler.send_sms_soberbros("Message from " + name + ": " + process_message(message))
-        SMSHandler.sendsms("+19522559343", "Message from " + name + ": " + process_message(message))
+        # SMSHandler.sendsms("+19522559343", "Message from " + name + ": " + process_message(message))

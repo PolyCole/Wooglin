@@ -1,6 +1,7 @@
 import boto3, sys, datetime
 from boto3.dynamodb.conditions import Key, Attr
 import wooglin
+import os
 
 def event_handled(event_id, event_time):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
@@ -26,6 +27,10 @@ def event_handled(event_id, event_time):
 
 def dbhandler(resp, user):
     operation = resp['entities']['db_operation'][0]['value']
+
+    if "eventname" in resp['entities'] or "new_keyword" in resp['entities']:
+        event_operation_handler(operation, resp)
+        return "200 OK"
 
     try:
         key = resp['entities']['key']
@@ -72,6 +77,46 @@ def dbhandler(resp, user):
         sober_bro_deassign("soberbros", key, date)
     else:
         wooglin.sendmessage("I'm sorry, that database functionality is either not understood or not supported")
+
+
+def event_operation_handler(operation, resp):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+
+    if operation == "create":
+        response = dynamodb.create_table(
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'number',
+                    'AttributeType': 'S',
+                },
+            ],
+            KeySchema=[
+                {
+                    'AttributeName': 'number',
+                    'KeyType': 'HASH',
+                },
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 5,
+                'WriteCapacityUnits': 5,
+            },
+            TableName=resp['entities']['eventname'][0]['value'],
+        )
+
+        os.environ['current_party'] = resp['entities']['eventname'][0]['value']
+
+        if 'new_keyword' in resp['entities']:
+            os.environ['current_party_keyword'] = resp['entities']['new_keyword'][0]['value']
+            wooglin.sendmessage("I have successfully created an event called : " + resp['entities']['eventname'][0]['value'] + ", with keyword " + resp['entities']['new_keyword'][0]['value'])
+        else:
+            wooglin.sendmessage("I have successfully created an event called: " + resp['entities']['eventname'][0]['value'] + ". You should probably add a keyword now.")
+    elif operation == "close_event":
+        os.environ['current_party'] = "None"
+        os.environ['current_party_keyword'] = "None"
+        wooglin.sendmessage("I have closed the current event. Somebody cue unwritten followed by closing time.")
+    elif operation == "modify":
+        os.environ['current_party_keyword'] = resp['entities']['new_keyword'][0]['value']
+        wooglin.sendmessage("I have updated the new event keyword to be: " + resp['entities']['new_keyword'][0]['value'])
 
 
 def extract_date(resp):
@@ -214,8 +259,8 @@ def sober_bro_assign(tablename, key, date):
             'date': date,
             'soberbro1': SoberBros[0],
             'soberbro2': SoberBros[1],
-            'soberbro3': SoberBros[2]
-            #'soberbro4': SoberBros[3]
+            'soberbro3': SoberBros[2],
+            'soberbro4': SoberBros[3]
         }
     )
 
@@ -303,8 +348,8 @@ def sober_bro_deassign(tablename, key, date):
             'date': date,
             'soberbro1': SoberBros[0],
             'soberbro2': SoberBros[1],
-            'soberbro3': SoberBros[2]
-            #'soberbro4': SoberBros[3]
+            'soberbro3': SoberBros[2],
+            'soberbro4': SoberBros[3]
         }
     )
 
@@ -349,13 +394,17 @@ def list_sober_bros(tablename, date):
     )
 
     response = response['Items']
-    print("sober_bro_assign is working with: " + str(response))
+
+    # Sober bro shift doesn't exist yet, let's create it.
+    if len(response) == 0:
+        return []
 
     SoberBros = []
     SoberBros.append(response[0]['soberbro1'])
     SoberBros.append(response[0]['soberbro2'])
     SoberBros.append(response[0]['soberbro3'])
-    #SoberBros.append(response[0]['soberbro4'])
+    SoberBros.append(response[0]['soberbro4'])
+
     return SoberBros
 
 
@@ -410,7 +459,7 @@ def stringify_soberbros(response):
     SoberBros.append(response[0]['soberbro1'].strip())
     SoberBros.append(response[0]['soberbro2'].strip())
     SoberBros.append(response[0]['soberbro3'].strip())
-    #SoberBros.append(response[0]['soberbro4'].strip())
+    SoberBros.append(response[0]['soberbro4'].strip())
 
     SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
