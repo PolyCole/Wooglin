@@ -42,7 +42,7 @@ def get_user_info(user_id):
 
         # Getting response from server and turning it into a dict.
         user_data = json.loads((urllib.request.urlopen(request2).read()).decode())
-
+        print(user_data)
     except Exception as e:
         print(e)
 

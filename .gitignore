@@ -112,3 +112,17 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+wooglin-body-develop.zip
+
+shitheap/SlackToken.txt
+
+shitheap/devCreds.txt
+
+shitheap/prodCreds.txt
+
+deploy_wooglin_dev.sh
+
+deploy_wooglin.sh
+
+scripts/soberbros.csv

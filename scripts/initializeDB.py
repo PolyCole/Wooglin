@@ -21,20 +21,23 @@ def initializeSoberBros(table, seedFile):
 
 			while currentLine != '':
 				processed = currentLine.split(",")
-				date = properDateFormat(processed[0])
-			
-				soberbro1 = processed[1] if len(processed[1]) > 5 else "NULL"
-				soberbro2 = processed[2] if len(processed[2]) > 5 else "NULL"
-				soberbro3 = processed[3] if len(processed[3]) > 5 else "NULL"
-				soberbro4 = processed[4] if len(processed[4]) > 5 else "NULL"
+				# date = properDateFormat(processed[0])
+				date = processed[0]
+
+				soberbro1 = processed[1] if len(processed[1]) > 5 else "NO ONE"
+				soberbro2 = processed[2] if len(processed[2]) > 5 else "NO ONE"
+				soberbro3 = processed[3] if len(processed[3]) > 5 else "NO ONE"
+				soberbro4 = processed[4] if len(processed[4]) > 5 else "NO ONE"
+				soberbro5 = processed[5] if len(processed[5]) > 5 else "NO ONE"
 
 				batch.put_item(
 					Item={
-						'date': date,
-						'soberbro1': soberbro1,
-						'soberbro2': soberbro2,
-						'soberbro3': soberbro3,
-						'soberbro4': soberbro4
+						'date': date.replace("\"",""),
+						'soberbro1': soberbro1.replace("\"",""),
+						'soberbro2': soberbro2.replace("\"",""),
+						'soberbro3': soberbro3.replace("\"",""),
+						'soberbro4': soberbro4.replace("\"",""),
+						'soberbro5': soberbro5.replace("\"","")
 					}
 				)
 				
