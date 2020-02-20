@@ -1,0 +1,40 @@
+// Wooglin Dev
+{
+	'token': 'H0hqXhTdXyZlgVcUKDLiEPdQ', 
+	'team_id': 'T3XHJSWMR', 
+	'api_app_id': 'ASG2WRG66', 
+	'event': {
+		'client_msg_id': 'c16135cb-f892-4f6d-babd-5814950dbdfc', 
+		'type': 'message', 
+		'text': 'hey', 
+		'user': 'UGZFWNPA8', 
+		'ts': '1579466750.000800', 
+		'team': 'T3XHJSWMR', 
+		'blocks': [
+			{
+				'type': 'rich_text', 
+				'block_id': '2tLeJ', 
+				'elements': [
+					{
+						'type': 'rich_text_section', 
+						'elements': [
+							{
+								'type': 'text', 
+								'text': 'hey'
+							}
+						]
+					}
+				]
+			}
+		], 
+		'channel': 'GSURXF3G8',
+		'event_ts': '1579466750.000800', 
+		'channel_type': 'group'
+	},
+ 	'type': 'event_callback', 
+	'event_id': 'EvSUT0C79N', 
+	'event_time': 1579466750, 
+	'authed_users': ['USUCM0J7N']
+}
+
+
