@@ -42,8 +42,9 @@ def lambda_handler(data, context):
     event_time = data['event_time']
 
     # TODO add in a key/val pair in the test request to bypass this method.
-    if DatabaseHandler.event_handled(event_id, event_time):
-        return "200 OK"
+    if 'ignore_event' not in data:
+        if DatabaseHandler.event_handled(event_id, event_time):
+            return "200 OK"
 
     # Ignore other bot events.
     if "subtype" in slack_event:

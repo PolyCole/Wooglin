@@ -350,7 +350,7 @@ def sober_bro_assign(tablename, key, date):
         right = left[1].split("brothers")
         message = left[0] + "is" + right[0] + "brother" + right[1]
 
-    while len(SoberBros) != 4:
+    while len(SoberBros) != 5:
         SoberBros.append("NO ONE")
 
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
