@@ -115,11 +115,12 @@ venv.bak/
 
 wooglin-body-develop.zip
 
-shitheap/SlackToken.txt
+the_dump/SlackToken.txt
 
-shitheap/devCreds.txt
+the_dump/devCreds.txt
+the_dump/devCreds.txt
 
-shitheap/prodCreds.txt
+the_dump/prodCreds.txt
 
 deploy_wooglin_dev.sh
 
