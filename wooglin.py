@@ -21,14 +21,17 @@ SLACK_URL = "https://slack.com/api/chat.postMessage"
 def lambda_handler(data, context):
     print("RECEIVED:")
     print(data)
-    global SLACK_CHANNEL
+
+    global SLACK_CHANNEL;
 
     # Handles initial challenge with Slack's verification.
     if "challenge" in data:
         return data["challenge"]
 
+    # If we're getting a text message.
     if 'body' in data:
         if data['body'] is not None:
+            SLACK_CHANNEL = os.environ['DEFAULT_CHANNEL']
             Wooglin_RM.handler(data);
             return "200 OK"
 
@@ -38,6 +41,7 @@ def lambda_handler(data, context):
     event_id = data['event_id']
     event_time = data['event_time']
 
+    # TODO add in a key/val pair in the test request to bypass this method.
     if DatabaseHandler.event_handled(event_id, event_time):
         return "200 OK"
 
@@ -53,11 +57,19 @@ def lambda_handler(data, context):
         # Getting ID of channel where message originated.
         SLACK_CHANNEL = slack_event["channel"]
 
+        # Checks that the user @ed us.
         if text.find(os.environ['MY_ID']) != -1:
+
+            # Pulling the nasty @tag out of the message.
             text = re.sub('<@.........>',"Wooglin,",text).strip()
+            print("Text after @ removal: " + text)
             try:
+                # Some classics.
                 if text == os.environ['SECRET_PROMPT']:
                     sendmessage(os.environ['SECRET_RESPONSE'])
+                elif text == "Wooglin, play funkytown":
+                    sendmessage("https://www.youtube.com/watch?v=s36eQwgPNSE")
+                # Not a given response, let's send the message to NLP.
                 else:
                     process_message(slack_event)
             except Exception as e:
@@ -66,7 +78,10 @@ def lambda_handler(data, context):
         return "200 OK"
 
 
+# Sends a message in slack.
 def sendmessage(message):
+    print("Sending: " + message)
+
     # Crafting our response.
     data = urllib.parse.urlencode(
         (
@@ -93,12 +108,16 @@ def sendmessage(message):
     return "200 OK"
 
 
+# Handles the request to wit and the subsequent routing.
 def process_message(slack_event):
     witClient = Wit(os.environ['WIT_TOKEN'])
 
+    # Wit response.
     resp = witClient.message(slack_event['text'].lower())
+
     user = slack_event['user']
 
+    # If Wooglin doesn't have a message intent, let's just tell the user we're confused.
     try:
         action = resp['entities']['intent'][0]['value']
         confidence = resp['entities']['intent'][0]['confidence']
@@ -106,6 +125,7 @@ def process_message(slack_event):
         action = "confused"
         confidence = 0
 
+    # Routing.
     if action == "confused" or confidence < 0.95:
         sendmessage("I'm sorry, I don't quite understand. To see my documentation, type help")
     elif action == "greeting":

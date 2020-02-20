@@ -27,6 +27,7 @@ def initializeSoberBros(table, seedFile):
 				soberbro2 = processed[2] if len(processed[2]) > 5 else "NULL"
 				soberbro3 = processed[3] if len(processed[3]) > 5 else "NULL"
 				soberbro4 = processed[4] if len(processed[4]) > 5 else "NULL"
+				soberbro5 = processed[5] if len(processed[5]) > 5 else "NULL"
 
 				batch.put_item(
 					Item={
@@ -34,7 +35,8 @@ def initializeSoberBros(table, seedFile):
 						'soberbro1': soberbro1,
 						'soberbro2': soberbro2,
 						'soberbro3': soberbro3,
-						'soberbro4': soberbro4
+						'soberbro4': soberbro4,
+						'soberbro5': soberbro5
 					}
 				)
 				

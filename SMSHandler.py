@@ -1,14 +1,14 @@
 import os
-import time
-import base64
 import datetime
 import boto3
-from urllib import request, parse
+import pytz
 import DatabaseHandler
 import wooglin
 from boto3.dynamodb.conditions import Key
 from twilio.rest import Client
 
+
+# The general handler for SMS operations.
 def smshandler(resp):
     try:
         message = resp['entities']['message'][0]['value']
@@ -37,6 +37,7 @@ def smshandler(resp):
     except KeyError:
         print("No key specified... Could be a group message...")
 
+    # No key given, let's see if there's a smslist specified.
     try:
         smslist = resp['entities']['smslist'][0]['value']
 
@@ -54,6 +55,7 @@ def smshandler(resp):
         return
 
 
+# Handler for one person.
 def individual_sms_name(key, message):
     phone_number = get_phone_number(key)
     resp = sendsms(phone_number, message)
@@ -61,7 +63,7 @@ def individual_sms_name(key, message):
     return
 
 
-# TODO Need to test with chapter.
+# Sends an sms message to the entire chapter.
 def send_sms_chapter(message):
     data = DatabaseHandler.scanTable('members')
 
@@ -70,14 +72,17 @@ def send_sms_chapter(message):
     client = Client(account_sid, auth_token)
 
     for person in data:
-        number = person['phonenumber']
+        try:
+            number = person['phonenumber']
 
-        binding_message = '{"binding_type":"sms", "address":"' + fix_phone_number_format(number) + '\"}'
+            binding_message = '{"binding_type":"sms", "address":"' + fix_phone_number_format(number) + '\"}'
 
-        notification = client.notify.services(os.environ['TWILIO_NOTIFY_SERVICE_SID']) \
-            .notifications.create(
-            to_binding=binding_message,
-            body=message)
+            notification = client.notify.services(os.environ['TWILIO_NOTIFY_SERVICE_SID']) \
+                .notifications.create(to_binding=binding_message, body=message)
+        # On the off chance someone has blacklisted Wooglin.
+        except Exception as e:
+            print("Errored on: " + number + " which should be: " + person['name'])
+            continue
 
     if notification:
         wooglin.sendmessage("Alrighty! I have notified the chapter: " + message)
@@ -85,31 +90,39 @@ def send_sms_chapter(message):
         wooglin.sendmessage("I was unable to send that message to the chapter.")
 
 
+# Sends an sms message to the active sober bros.
 def send_sms_soberbros(message):
+    # Correcting for our timezone. Default is UTC.
+    local_tz = pytz.timezone("US/Mountain")
     now = datetime.datetime.now()
-    date = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
+    now = now.replace(tzinfo=pytz.utc).astimezone(local_tz)
+    current_date = now.isoformat()[0:10]
 
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table('soberbros')
 
     response = table.query(
-        KeyConditionExpression=Key('date').eq(date)
+        KeyConditionExpression=Key('date').eq(current_date)
     )
 
     if len(response['Items']) == 0:
-        message = "Looks like there aren't any sober bros for " + str(DatabaseHandler.unprocessDate(date)) + ".\n Thus, I was unable to send them a message."
+        message = "Looks like there aren't any sober bros for " + str(DatabaseHandler.unprocessDate(current_date)) + ".\n Thus, I was unable to send them a message."
         wooglin.sendmessage(message)
         return
+
+    response = response['Items']
 
     SoberBros = []
     SoberBros.append(response[0]['soberbro1'].strip())
     SoberBros.append(response[0]['soberbro2'].strip())
     SoberBros.append(response[0]['soberbro3'].strip())
-    # SoberBros.append(response[0]['soberbro4'].strip())
+    SoberBros.append(response[0]['soberbro4'].strip())
+    SoberBros.append(response[0]['soberbro5'].strip())
     SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
     errors = []
 
+    # Notifies sober bros.
     for person in SoberBros:
         number = get_phone_number(person)
         try:
@@ -117,13 +130,14 @@ def send_sms_soberbros(message):
         except Exception as e:
             errors.append(person)
 
+    # All messages went through without issue.
     if len(errors) == 0:
-        date_formatted = DatabaseHandler.unprocessDate(date)
+        date_formatted = DatabaseHandler.unprocessDate(current_date)
         confirmation = "I've successfully sent the sober bros for " + date_formatted + " the message: "
         confirmation += message
         wooglin.sendmessage(confirmation)
         return
-
+    # Messages went through with partial success.
     else:
         message = "Okay. I've had some marginal success."
         message += "I was partially able to notify the sober bros. I was unable to notify:\n"
@@ -132,6 +146,8 @@ def send_sms_soberbros(message):
         wooglin.sendmessage(message)
 
 
+# Sends a text message to the executive board.
+# TODO need to update this once Quinn steps down.
 def send_sms_exec(message):
     exec_members = [
         "Cole Polyak",
@@ -149,11 +165,12 @@ def send_sms_exec(message):
     errors = []
     message = "Message for the Executive Board: " + message
 
+    # Sends to each exec member.
     for person in exec_members:
         print("Trying to notify: " + person)
         number = get_phone_number(person)
         resp = sendsms(number, message)
-        if (not resp):
+        if not resp:
             errors.append(person)
 
     if len(errors) == 0:
@@ -167,6 +184,7 @@ def send_sms_exec(message):
     return
 
 
+# Gets the phone number of the given person.
 def get_phone_number(key):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table('members')
@@ -183,6 +201,7 @@ def get_phone_number(key):
     return number
 
 
+# Creates the sober bro message to be sent to the chapter.
 def create_sober_bro_message(date):
     dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
     table = dynamodb.Table('soberbros')
@@ -203,26 +222,30 @@ def create_sober_bro_message(date):
     SoberBros.append((response[0])['soberbro1'].strip())
     SoberBros.append((response[0])['soberbro2'].strip())
     SoberBros.append((response[0])['soberbro3'].strip())
+    SoberBros.append((response[0])['soberbro4'].strip())
+    SoberBros.append((response[0])['soberbro5'].strip())
 
     print(SoberBros)
     SoberBros = [x for x in SoberBros if x != "NO ONE"]
 
     message = "Here are the sober bros for " + str(DatabaseHandler.unprocessDate(date)) + ": \n"
 
+    # Gets each of the Sober bro's phone number.
     for person in SoberBros:
         message += str(person)
         number = get_phone_number(person)
         message += " (" + str(number) + ")\n"
     message += "If you are in need of assistance, please contact one of these people."
+
     print("CSBM returned: " + message)
     return message
 
+
+# Sends an sms message to the given number.
 def sendsms(number, message):
     # TODO add in code to make this message only return true when message went through.
 
-    # insert Twilio Account SID into the REST API URL
-    # populated_url = os.environ["TWILIO_SMS_URL"].format(os.environ["TWILIO_SID"])
-
+    # Ensures proper phone number format.
     number = fix_phone_number_format(number)
     print("Number fixed: " + str(number))
 
@@ -230,6 +253,7 @@ def sendsms(number, message):
     auth_token = os.environ["TWILIO_TOKEN"]
     client = Client(account_sid, auth_token)
 
+    # Sends the message!
     message = client.messages.create(
         body=message,
         from_=os.environ["TWILIO_MESSAGING_SERVICE_SID"],
@@ -241,6 +265,7 @@ def sendsms(number, message):
     return True
 
 
+# Ensures we're in the proper phone number format.
 def fix_phone_number_format(number):
     if number.find('+1') != -1:
         return number
