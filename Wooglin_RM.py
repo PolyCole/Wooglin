@@ -20,7 +20,7 @@ def handler(data):
     current_event = get_current_event()
 
     # No event going on rn.
-    if current_event == "None":
+    if current_event == "none":
         SMSHandler.sendsms(message['From'], no_event_message())
         return "200 OK"
     else:
@@ -43,12 +43,15 @@ def handler(data):
             return "200 OK"
 
         # If the sender didn't have the keyword correct.
-        if not validate_keyword(message['Body']):
-            SMSHandler.sendsms(message['From'], incorrect_keyword_message())
-            return "200 OK"
+        if get_keyword() != "none":
+            if not validate_keyword(message['Body']):
+                SMSHandler.sendsms(message['From'], incorrect_keyword_message())
+                return "200 OK"
 
         # Ensuring the number doesn't exist in the DB yet.
         if response['Count'] == 0:
+            SMSHandler.sendsms(message['From'], welcome_number_message(message['Body']))
+
             table.put_item(
                 Item={
                     'number': message['From'],
@@ -58,22 +61,47 @@ def handler(data):
                     'help_flag_raised': "n/a"
                 }
             )
-            SMSHandler.sendsms(message['From'], welcome_number_message(message['Body']))
+
+            current_guests = increment_guests(current_event)
 
             # Number of people attending the event.
-            if table.item_count % 50 == 0:
-                wooglin.sendmessage("The current event: " + current_event + " has " + table.item_count + " guests registered.")
+            if current_guests % 50 == 0:
+                wooglin.sendmessage("The current event: " + current_event + " has " + str(current_guests) + " guests registered.")
 
         else:
             SMSHandler.sendsms(message['From'], number_exists_message())
             return "200 OK"
 
 
+def increment_guests(current_event):
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    table = dynamodb.Table("events")
+
+    response = table.query(
+        KeyConditionExpression=Key('name').eq(current_event)
+    )
+
+    guests = int(response['Items'][0]['guest_count']) + 1
+
+    table.put_item(
+        Item={
+            'name': current_event,
+            'comments': response['Items'][0]['comments'],
+            'end_time': response['Items'][0]['end_time'],
+            'guest_count': str(guests),
+            'start_time': response['Items'][0]['start_time']
+        }
+    )
+
+    return guests
+
+
 # Validates that the keyword given matches the actual keyword.
 def validate_keyword(message):
-    message = message.split(",")
+    message = message.replace("+", " ")
+    message = message.split(" ")
 
-    if len(message) != 2:
+    if len(message) < 2:
         return False
 
     if message[0].strip().lower() != get_keyword():
@@ -100,8 +128,12 @@ def get_current_event():
 
 # Gets the name from the given message.
 def get_name(message):
-    message = message.split(",")
-    name = message[1].replace("+", " ")
+    message = message.split("+")
+    offset = 0 if get_keyword() == "none" else 1
+    name = ""
+    for x in range(offset, len(message)):
+        name += message[x] + " "
+
     return name.strip()
 
 
@@ -150,7 +182,7 @@ def no_event_message():
 def incorrect_keyword_message():
     message = "I'm sorry. Some part of your message was strange."
     message += " Please ensure your message is in the format:"
-    message += "\nkeyword, firstname lastname"
+    message += "\nkeyword firstname lastname"
     message += "\n and try agin."
     return message
 
@@ -239,10 +271,10 @@ def start_help_handler(message):
 # Notifies the sober bros and the executive board.
 def notify_parties(name, number, message="nomessage"):
     if message == "nomessage":
-        SMSHandler.send_sms_exec(alert_message(name, number))
-        SMSHandler.send_sms_soberbros(alert_message(name, number))
-        # SMSHandler.sendsms("+19522559343", alert_message(name))
+        # SMSHandler.send_sms_exec(alert_message(name, number))
+        # SMSHandler.send_sms_soberbros(alert_message(name, number))
+        SMSHandler.sendsms("+19522559343", alert_message(name, number))
     else:
-        SMSHandler.send_sms_exec("Message from " + name + " (" + number + "): " + process_message(message))
-        SMSHandler.send_sms_soberbros("Message from " + name + " (" + number + "): " + process_message(message))
-        # SMSHandler.sendsms("+19522559343", "Message from " + name + ": " + process_message(message))
+        # SMSHandler.send_sms_exec("Message from " + name + " (" + number + "): " + process_message(message))
+        # SMSHandler.send_sms_soberbros("Message from " + name + " (" + number + "): " + process_message(message))
+        SMSHandler.sendsms("+19522559343", alert_message(name,number))

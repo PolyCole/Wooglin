@@ -132,7 +132,7 @@ def event_operation_handler(operation, resp):
             }
         )
 
-        keyword = "None"
+        keyword = "none"
 
         # Did the user specify a keyword at inception?
         if 'new_keyword' in resp['entities']:
@@ -155,14 +155,15 @@ def event_operation_handler(operation, resp):
         # No keyword.
         else:
             wooglin.sendmessage("I have successfully created an event called: " +
-                                resp['entities']['eventname'][0]['value'] + ". You should probably add a keyword now.")
+                                resp['entities']['eventname'][0]['value'] + ". There is currently no keyword.")
+
     # Closing the current active event.
     elif operation == "close_event":
         table = dynamodb.Table('events');
 
         response = table.query(KeyConditionExpression=Key('name').eq('active'))['Items'][0]
 
-        if response['comments'] == "None":
+        if response['comments'] == "none":
             wooglin.sendmessage("Yikes. Doesn't look like there's an event going on right now.")
 
         print("Terminating event: " + response['comments'])
@@ -171,16 +172,13 @@ def event_operation_handler(operation, resp):
         table.put_item(
             Item={
                 'name': "active",
-                'comments': "None",
-                'keyword': "None"
+                'comments': "none",
+                'keyword': "none"
             }
         )
 
         # Grabbing the party's data from the events db.
         initial_data = table.query(KeyConditionExpression=Key('name').eq(response['comments']))
-
-        # Opening connection to the party
-        current_party_table = dynamodb.Table(initial_data['Items'][0]['name'])
 
         # Putting the new information about the party into the db.
         table.put_item(
@@ -188,7 +186,7 @@ def event_operation_handler(operation, resp):
                 'name': initial_data['Items'][0]['name'],
                 'start_time': initial_data['Items'][0]['start_time'],
                 'end_time': Wooglin_RM.get_arrival_time(),
-                'guest_count': current_party_table.item_count,
+                'guest_count': initial_data['Items'][0]['guest_count'],
                 'comments': "Terminated by Wooglin."
             }
         )
@@ -201,7 +199,7 @@ def event_operation_handler(operation, resp):
         response = table.query(KeyConditionExpression=Key('name').eq('active'))['Items'][0]
 
         # No event happening.
-        if response['comments'] == "None":
+        if response['comments'] == "none":
             wooglin.sendmessage("Doesn't look like there's an event going on right now. I wasn't able to update the keyword.")
             return "200 OK"
 
