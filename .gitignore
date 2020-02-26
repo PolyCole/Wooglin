@@ -126,3 +126,7 @@ deploy_wooglin_dev.sh
 deploy_wooglin.sh
 
 scripts/soberbros.csv
+
+*.zip
+
+.deploy_wooglin.sh.swp
