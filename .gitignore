@@ -130,3 +130,7 @@ scripts/soberbros.csv
 *.zip
 
 .deploy_wooglin.sh.swp
+
+scripts/temp_script.py
+
+scripts/.trainWit.py.swp
