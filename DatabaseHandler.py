@@ -7,8 +7,9 @@ import Wooglin_RM
 
 # Checks if the current slack event has already been handled.
 def event_handled(event_id, event_time):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table("event_ids")
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table("event_ids")
+    table = dynamo_connect("event_ids")
 
     response = table.query(
         KeyConditionExpression=Key('event_id').eq(event_id)
@@ -29,6 +30,17 @@ def event_handled(event_id, event_time):
             print("Event already being handled, terminating")
             return True
     return False
+
+
+def dynamo_connect(tablename="NONE"):
+    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+
+    if tablename == "NONE":
+        return dynamodb
+    else:
+        table = dynamodb.Table(tablename)
+        return table
+
 
 
 # The generic handler for all Database Operations.
@@ -90,13 +102,57 @@ def dbhandler(resp, user):
     elif operation == "deassign":
         date = extract_date(resp)
         sober_bro_deassign("soberbros", key, date)
+    elif operation == "no_sb_shift":
+        no_sb_shift()
     else:
         wooglin.sendmessage("I'm sorry, that database functionality is either not understood or not supported")
 
 
+def no_sb_shift():
+    members = scanTable('members')
+    soberbros = scanTable('soberbros')
+
+    brothers = get_brothers(members)
+    sober_brothers = get_sober_brothers(soberbros)
+
+    print(type(brothers))
+    print(type(sober_brothers))
+
+    no_shifts = brothers - sober_brothers
+
+    message = "These are the brothers who, according to my records, do not currently have sober bro shifts:\n"
+
+    for x in no_shifts:
+        message += str(x) + ", "
+
+    wooglin.sendmessage(message)
+
+
+def get_brothers(members):
+    to_return = set()
+
+    for x in members:
+        to_return.add(x['name'])
+
+    return to_return
+
+
+def get_sober_brothers(soberbros):
+    to_return = set()
+
+    for x in soberbros:
+        for y in range(1,5):
+            key = "soberbro" + str(y)
+            current_brother = x[key]
+            if current_brother != "NO ONE":
+                to_return.add(current_brother)
+    return to_return
+
+
 # Handles the event logic.
 def event_operation_handler(operation, resp):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    dynamodb = dynamo_connect()
 
     # Creating an event.
     if operation == "create":
@@ -224,11 +280,12 @@ def extract_date(resp):
 
 
 # Handles get operations to the DB.
-def getOperation(table, key, attribute):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+def getOperation(tablename, key, attribute):
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # tablename = table
+    # table = dynamodb.Table(table)
 
-    tablename = table
-    table = dynamodb.Table(table)
+    table = dynamo_connect(tablename)
 
     # Handling for getting a list of users.
     if isinstance(key, list):
@@ -262,9 +319,10 @@ def getOperation(table, key, attribute):
 
 
 # Handles get operations on the sober bro table.
-def getOperationSoberBros(table, date):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(table)
+def getOperationSoberBros(tablename, date):
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table(table)
+    table = dynamo_connect(tablename)
 
     response = table.query(
         KeyConditionExpression=Key('date').eq(date)
@@ -280,17 +338,17 @@ def getOperationSoberBros(table, date):
 
 # Returns all values in the given table.
 def scanTable(tablename):
-    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-    table = dynamodb.Table(tablename)
+    # dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    # table = dynamodb.Table(tablename)
+    table = dynamo_connect(tablename)
     return table.scan()['Items']
 
 
 # Handles modify operations on members table.
-def modifyOperation(resp, table, key):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-
-    tablename = table
-    table = dynamodb.Table(table)
+def modifyOperation(resp, tablename, key):
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table(table)
+    table = dynamo_connect(tablename)
 
     target = table.query(
         KeyConditionExpression=Key('name').eq(key[0]['value'])
@@ -351,8 +409,11 @@ def sober_bro_assign(tablename, key, date):
     while len(SoberBros) != 5:
         SoberBros.append("NO ONE")
 
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(tablename)
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table(tablename)
+
+    table = dynamo_connect(tablename)
+
     table.put_item(
         Item={
             'date': date,
@@ -368,11 +429,13 @@ def sober_bro_assign(tablename, key, date):
 
 
 # Handles delete operations in the members table.
-def deleteOperation(table, key, user):
-    # TODO Change this into a method in a handler. Perhaps a boto3 handler?
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(table)
-    backup_table = dynamodb.Table('members_backup')
+def deleteOperation(tablename, key, user):
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table(tablename)
+    # backup_table = dynamodb.Table('members_backup')
+
+    table = dynamo_connect(tablename)
+    backup_table = dynamo_connect("members_backup")
 
     peopleIveDeleted = ""
 
@@ -447,8 +510,10 @@ def sober_bro_deassign(tablename, key, date):
     while len(SoberBros) != 5:
         SoberBros.append("NO ONE")
 
-    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-    table = dynamodb.Table("soberbros")
+    # dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    # table = dynamodb.Table("soberbros")
+
+    table = dynamo_connect("soberbros")
 
     table.put_item(
         Item={
@@ -464,8 +529,9 @@ def sober_bro_deassign(tablename, key, date):
 
 # Creates an entry in the members table.
 def createOperation(tablename, key):
-    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-    table = dynamodb.Table(tablename)
+    # dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    # table = dynamodb.Table(tablename)
+    table = dynamo_connect(tablename)
 
     peopleIveCreated = ""
 
@@ -494,8 +560,9 @@ def createOperation(tablename, key):
 
 # Lists the sober bros for a given date.
 def list_sober_bros(tablename, date):
-    dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-    table = dynamodb.Table(tablename)
+    # dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+    # table = dynamodb.Table(tablename)
+    table = dynamo_connect(tablename)
 
     response = table.query(
         KeyConditionExpression=Key('date').eq(date)

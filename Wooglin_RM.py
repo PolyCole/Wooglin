@@ -275,10 +275,10 @@ def start_help_handler(message):
 # Notifies the sober bros and the executive board.
 def notify_parties(name, number, message="nomessage"):
     if message == "nomessage":
-        # SMSHandler.send_sms_exec(alert_message(name, number))
-        # SMSHandler.send_sms_soberbros(alert_message(name, number))
-        SMSHandler.sendsms("+19522559343", alert_message(name, number))
+        SMSHandler.send_sms_exec(alert_message(name, number))
+        SMSHandler.send_sms_soberbros(alert_message(name, number))
+        # SMSHandler.sendsms("", alert_message(name, number))
     else:
-        # SMSHandler.send_sms_exec("Message from " + name + " (" + number + "): " + process_message(message))
-        # SMSHandler.send_sms_soberbros("Message from " + name + " (" + number + "): " + process_message(message))
-        SMSHandler.sendsms("+19522559343", alert_message(name,number))
+        SMSHandler.send_sms_exec("Message from " + name + " (" + number + "): " + process_message(message))
+        SMSHandler.send_sms_soberbros("Message from " + name + " (" + number + "): " + process_message(message))
+        # SMSHandler.sendsms("", alert_message(name,number))
