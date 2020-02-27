@@ -444,7 +444,7 @@ def sober_bro_deassign(tablename, key, date):
     wooglin.sendmessage(message)
 
     # Ensuring the table is fixed.
-    while len(SoberBros) != 4:
+    while len(SoberBros) != 5:
         SoberBros.append("NO ONE")
 
     dynamodb = boto3.resource("dynamodb", region_name="us-east-1")

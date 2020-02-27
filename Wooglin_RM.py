@@ -100,6 +100,7 @@ def increment_guests(current_event):
 def validate_keyword(message):
     message = message.replace("+", " ")
     message = message.split(" ")
+    message = [x for x in message if x != ""]
 
     if len(message) < 2:
         return False
@@ -128,7 +129,10 @@ def get_current_event():
 
 # Gets the name from the given message.
 def get_name(message):
-    message = message.split("+")
+    message = message.replace("+", " ")
+    message = message.split(" ")
+    message = [x for x in message if x != ""]
+
     offset = 0 if get_keyword() == "none" else 1
     name = ""
     for x in range(offset, len(message)):
