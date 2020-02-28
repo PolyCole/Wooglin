@@ -159,7 +159,7 @@ def send_sms_exec(message):
         "Rex Fathauer",
         "Caleb Bruce",
         "Cade Carter",
-        "Quinn Merrell"
+        "Kyle Waggoner"
     ]
 
     errors = []
