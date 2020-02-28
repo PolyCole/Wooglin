@@ -42,7 +42,6 @@ def dynamo_connect(tablename="NONE"):
         return table
 
 
-
 # The generic handler for all Database Operations.
 def dbhandler(resp, user):
     # First, what are we doing?
@@ -108,6 +107,7 @@ def dbhandler(resp, user):
         wooglin.sendmessage("I'm sorry, that database functionality is either not understood or not supported")
 
 
+# This method checks to see who hasn't signed up for a sober bro shift.
 def no_sb_shift():
     members = scanTable('members')
     soberbros = scanTable('soberbros')
@@ -122,8 +122,13 @@ def no_sb_shift():
 
     message = "These are the brothers who, according to my records, do not currently have sober bro shifts:\n"
 
+    count = 0
     for x in no_shifts:
-        message += str(x) + ", "
+        if count != len(no_shifts) - 1:
+            message += str(x) + ", "
+        else:
+            message += "and " + str(x) + "."
+        count = count + 1
 
     wooglin.sendmessage(message)
 
