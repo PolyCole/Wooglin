@@ -15,6 +15,7 @@ scripts/attendanceTracking/excuses.txt
 scripts/attendanceTracking/ListFile.txt
 scripts/attendanceTracking/Attendances/
 scripts/witData.txt
+the_dump/
 
 # Distribution / packaging
 .Python
