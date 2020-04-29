@@ -3,6 +3,8 @@ import datetime
 from boto3.dynamodb.conditions import Key, Attr
 import wooglin
 import Wooglin_RM
+from cryptography.fernet import Fernet
+import os
 
 
 # Checks if the current slack event has already been handled.
@@ -602,8 +604,8 @@ def stringify_member(data, table, key, attribute):
         if attribute == "":
             toReturn = "Here is the data for " + str(data[0]['name']) + ":" + "\n"
             toReturn += "Phone number: " + str(data[0]['phonenumber']) + "\n"
-            toReturn += "Email: " + str(data[0]['email']) + "\n"
-            toReturn += "Address: " + str(data[0]['address']) + "\n"
+            toReturn += "Email: " + str(decrypt(data[0]['email'])) + "\n"
+            toReturn += "Address: " + str(decrypt(data[0]['address'])) + "\n"
             toReturn += "Roll number: " + str(data[0]['rollnumber']) + "\n"
             toReturn += "Excused Absences: " + str(data[0]['excused']) + "\n"
             toReturn += "Excuses: " + str(data[0]['excuses']) + "\n"
@@ -625,6 +627,16 @@ def stringify_member(data, table, key, attribute):
         toReturn = "I'm sorry, I could not find " + str(key[0]['value']) + "\n"
         toReturn += " in " + str(table) + ". Please make sure it is spelled correctly."
     return toReturn
+
+
+def decrypt(text):
+    key = os.environ['ENCRYPTION_KEY'].encode()
+    f = Fernet(key)
+    decrypted = f.decrypt(text.encode())
+
+    if isinstance(decrypted, bytes):
+        return decrypted.decode()
+    return decrypted
 
 
 # Stringifies the modify operation.
