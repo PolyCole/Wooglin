@@ -2,6 +2,7 @@ import os
 import logging
 import urllib
 import re
+import sys
 
 from wit import Wit
 import GreetUser
@@ -10,6 +11,8 @@ import SMSHandler
 import Wooglin_RM
 
 from urllib import request, parse
+
+from twilio.twiml.messaging_response import MessagingResponse
 
 # Bot authorization token from slack.
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -22,7 +25,23 @@ def lambda_handler(data, context):
     print("RECEIVED:")
     print(data)
 
-    global SLACK_CHANNEL;
+    # Verifying that our requests are actually coming from slack.
+    if "token" in data:
+        if data['token'] != os.environ['SLACK_VERIFICATION_TOKEN']:
+            print("VERIFICATION FOR SLACK FAILED.")
+            print("Terminating....")
+            sys.exit(1)
+
+    # Verifying our requests are coming from Twilio.
+    # TODO Figure out a far more accurate way to do this.
+    # if "headers" in data:
+    #     if data['headers']['X-Twilio-Signature'] != os.environ["TWILIO_VERIFICATION_TOKEN"]:
+    #         print("VERIFICATION FOR TWILIO FAILED.")
+    #         print("Terminating....")
+    #         sys.exit(1)
+
+
+    global SLACK_CHANNEL
 
     # Handles initial challenge with Slack's verification.
     if "challenge" in data:
@@ -32,8 +51,9 @@ def lambda_handler(data, context):
     if 'body' in data:
         if data['body'] is not None:
             SLACK_CHANNEL = os.environ['DEFAULT_CHANNEL']
-            Wooglin_RM.handler(data);
-            return "200 OK"
+            Wooglin_RM.handler(data)
+            resp = MessagingResponse()
+            return str(resp)
 
     # Getting the data of the event.
     slack_event = data['event']
@@ -48,9 +68,8 @@ def lambda_handler(data, context):
 
     # Ignore other bot events.
     if "bot_id" in slack_event:
-        if slack_event['subtype'] == "bot_message":
-            logging.warning("Ignore bot event")
-            return "200 OK"
+        logging.warning("Ignore bot event")
+        return "200 OK"
     else:
         # Parses out garbage text if user @'s the bot'
         text = slack_event["text"].lower()
